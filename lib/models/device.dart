@@ -26,6 +26,10 @@ class Policy {
     required this.enabled,
     this.dailyMinutes,
     this.categoryKey,
+    this.scheduleDays = const [],
+    this.startsAtMinute,
+    this.endsAtMinute,
+    this.modeKey,
   });
 
   final int id;
@@ -34,6 +38,10 @@ class Policy {
   final bool enabled;
   final int? dailyMinutes;
   final String? categoryKey;
+  final List<int> scheduleDays;
+  final int? startsAtMinute;
+  final int? endsAtMinute;
+  final String? modeKey;
 
   factory Policy.fromJson(Map<String, dynamic> json) {
     return Policy(
@@ -43,6 +51,12 @@ class Policy {
       enabled: json['enabled'] as bool,
       dailyMinutes: json['daily_minutes'] as int?,
       categoryKey: json['category_key'] as String?,
+      scheduleDays: (json['schedule_days'] as List<dynamic>? ?? [])
+          .map((item) => item as int)
+          .toList(),
+      startsAtMinute: json['starts_at_minute'] as int?,
+      endsAtMinute: json['ends_at_minute'] as int?,
+      modeKey: json['mode_key'] as String?,
     );
   }
 }
@@ -100,4 +114,3 @@ class Device {
     );
   }
 }
-
