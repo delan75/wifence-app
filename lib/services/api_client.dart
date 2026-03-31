@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../models/auth.dart';
+import '../models/category.dart';
 import '../models/dashboard.dart';
 import '../models/device.dart';
 import '../models/gateway.dart';
@@ -193,6 +194,20 @@ class ApiClient {
     );
   }
 
+  Future<List<CategoryOption>> fetchCategories() async {
+    final response = await _client.get(
+      Uri.parse('$_baseUrl/categories'),
+      headers: _headers(),
+    );
+    if (response.statusCode != 200) {
+      throw Exception(_errorMessage(response, 'Failed to load categories'));
+    }
+
+    return (jsonDecode(response.body) as List<dynamic>)
+        .map((item) => CategoryOption.fromJson(item as Map<String, dynamic>))
+        .toList();
+  }
+
   Future<ModesOverview> fetchModes() async {
     final response = await _client.get(
       Uri.parse('$_baseUrl/modes'),
@@ -245,6 +260,77 @@ class ApiClient {
     return Device.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
   }
 
+  Future<List<Profile>> fetchProfiles() async {
+    final response = await _client.get(
+      Uri.parse('$_baseUrl/profiles'),
+      headers: _headers(),
+    );
+    if (response.statusCode != 200) {
+      throw Exception(_errorMessage(response, 'Failed to load profiles'));
+    }
+
+    return (jsonDecode(response.body) as List<dynamic>)
+        .map((item) => Profile.fromJson(item as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<Profile> createProfile({
+    required String name,
+    String? color,
+  }) async {
+    final response = await _client.post(
+      Uri.parse('$_baseUrl/profiles'),
+      headers: _jsonHeaders(),
+      body: jsonEncode({
+        'name': name,
+        'color': color,
+      }),
+    );
+    if (response.statusCode != 200) {
+      throw Exception(_errorMessage(response, 'Failed to create profile'));
+    }
+
+    return Profile.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+  }
+
+  Future<Profile> updateProfile({
+    required int profileId,
+    String? name,
+    String? color,
+  }) async {
+    final response = await _client.patch(
+      Uri.parse('$_baseUrl/profiles/$profileId'),
+      headers: _jsonHeaders(),
+      body: jsonEncode({
+        if (name != null) 'name': name,
+        if (color != null) 'color': color,
+      }),
+    );
+    if (response.statusCode != 200) {
+      throw Exception(_errorMessage(response, 'Failed to update profile'));
+    }
+
+    return Profile.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+  }
+
+  Future<Device> updateDeviceProfile({
+    required int deviceId,
+    required int? profileId,
+  }) async {
+    final response = await _client.patch(
+      Uri.parse('$_baseUrl/devices/$deviceId'),
+      headers: _jsonHeaders(),
+      body: jsonEncode({
+        'profile_id': profileId,
+      }),
+    );
+    if (response.statusCode != 200) {
+      throw Exception(_errorMessage(response, 'Failed to update device profile'));
+    }
+
+    return Device.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+  }
+
   Future<void> updateProfileSchedule({
     required int profileId,
     required String name,
@@ -276,6 +362,26 @@ class ApiClient {
     );
     if (response.statusCode != 200) {
       throw Exception(_errorMessage(response, 'Failed to clear profile routine'));
+    }
+  }
+
+  Future<void> pauseProfile(int profileId) async {
+    final response = await _client.post(
+      Uri.parse('$_baseUrl/profiles/$profileId/pause'),
+      headers: _headers(),
+    );
+    if (response.statusCode != 200) {
+      throw Exception(_errorMessage(response, 'Failed to pause profile'));
+    }
+  }
+
+  Future<void> resumeProfile(int profileId) async {
+    final response = await _client.post(
+      Uri.parse('$_baseUrl/profiles/$profileId/resume'),
+      headers: _headers(),
+    );
+    if (response.statusCode != 200) {
+      throw Exception(_errorMessage(response, 'Failed to resume profile'));
     }
   }
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../models/category.dart';
 import '../models/device.dart';
 import '../services/api_client.dart';
 import '../theme/wifence_theme.dart';
@@ -20,13 +21,6 @@ class DeviceDetailScreen extends StatefulWidget {
 
 class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
   late Future<Device> _deviceFuture;
-
-  static const List<String> _categoryOptions = [
-    'social_media',
-    'gaming',
-    'streaming',
-    'adult',
-  ];
 
   @override
   void initState() {
@@ -90,7 +84,12 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
   }
 
   Future<void> _addCategory(Device device) async {
-    final selected = await showModalBottomSheet<String>(
+    final categories = await widget.apiClient.fetchCategories();
+    if (!mounted) {
+      return;
+    }
+
+    final selected = await showModalBottomSheet<CategoryOption>(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
@@ -110,10 +109,11 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 14),
-              ..._categoryOptions.map(
+              ...categories.map(
                 (category) => ListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: Text(category.replaceAll('_', ' ')),
+                  title: Text(category.label),
+                  subtitle: Text(category.description),
                   trailing: const Icon(Icons.add_rounded),
                   onTap: () => Navigator.of(context).pop(category),
                 ),
@@ -128,7 +128,71 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
       return;
     }
 
-    await widget.apiClient.addCategoryPolicy(device.id, selected);
+    await widget.apiClient.addCategoryPolicy(device.id, selected.key);
+    await _reload();
+  }
+
+  Future<void> _assignProfile(Device device) async {
+    final profiles = await widget.apiClient.fetchProfiles();
+    if (!mounted) {
+      return;
+    }
+
+    final selected = await showModalBottomSheet<int?>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
+        decoration: const BoxDecoration(
+          color: WiFenceColors.card,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Move to group',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'Choose which household group this device belongs to.',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 14),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('No group'),
+                subtitle: const Text('Keep this device ungrouped.'),
+                trailing: const Icon(Icons.remove_circle_outline_rounded),
+                onTap: () => Navigator.of(context).pop(-1),
+              ),
+              ...profiles.map(
+                (profile) => ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(profile.name),
+                  subtitle: Text(profile.color ?? 'Local group'),
+                  trailing: const Icon(Icons.arrow_forward_rounded),
+                  onTap: () => Navigator.of(context).pop(profile.id),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (selected == null) {
+      return;
+    }
+
+    await widget.apiClient.updateDeviceProfile(
+      deviceId: device.id,
+      profileId: selected == -1 ? null : selected,
+    );
     await _reload();
   }
 
@@ -192,6 +256,14 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
                 child: const Text('Block category'),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton(
+                onPressed: () => _assignProfile(device),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+                child: const Text('Move to group'),
               ),
               const SizedBox(height: 24),
               Text(
