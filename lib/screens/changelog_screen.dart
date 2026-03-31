@@ -28,6 +28,21 @@ class ChangelogScreen extends StatelessWidget {
               ),
               SizedBox(height: 14),
               _VersionCard(
+                version: '0.4.2',
+                tag: 'Control surface',
+                accent: WiFenceColors.deepSea,
+                title: 'In-app enforcement controls for real gateway hardening',
+                summary:
+                    'Encrypted DNS hardening is no longer hidden behind environment variables. WiFence now exposes a real gateway settings surface in the More tab for managing resolver-lock behavior and custom bypass targets.',
+                bullets: [
+                  'The gateway now exposes dedicated preferences routes for encrypted DNS hardening settings.',
+                  'Owners can toggle hardening and Firefox canary handling from the app.',
+                  'Custom resolver domains plus IPv4 and IPv6 targets can now be added in-app.',
+                  'These controls persist on the gateway and trigger enforcement sync after changes.',
+                ],
+              ),
+              SizedBox(height: 14),
+              _VersionCard(
                 version: '0.4.1',
                 tag: 'Enforcement hardening',
                 accent: WiFenceColors.cobalt,
@@ -221,7 +236,7 @@ class _ProgressStrip extends StatelessWidget {
       children: const [
         Expanded(
           child: _StatTile(
-            value: '5',
+            value: '6',
             label: 'Core phases shipped',
             accent: WiFenceColors.sky,
           ),
@@ -462,6 +477,10 @@ class _CapabilityGrid extends StatelessWidget {
       (
         title: 'Encrypted DNS hardening',
         description: 'Known DoH and resolver targets can be blocked by provider set, browser canary, and configurable app-specific domains or IPs.',
+      ),
+      (
+        title: 'Admin controls',
+        description: 'Gateway enforcement settings now have a dedicated mobile control surface instead of living only in environment config.',
       ),
     ];
 
