@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/auth.dart';
 import '../services/api_client.dart';
 import '../theme/wifence_theme.dart';
+import 'changelog_screen.dart';
 import 'dashboard_screen.dart';
 import 'modes_screen.dart';
 
@@ -41,6 +42,13 @@ class _WiFenceAppShellState extends State<WiFenceAppShell> {
     _AccountStageScreen(
       currentUser: widget.currentUser,
       onLogout: widget.onLogout,
+      onOpenChangelog: () {
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => const ChangelogScreen(),
+          ),
+        );
+      },
     ),
   ];
 
@@ -296,19 +304,43 @@ class _AccountStageScreen extends StatelessWidget {
   const _AccountStageScreen({
     required this.currentUser,
     required this.onLogout,
+    required this.onOpenChangelog,
   });
 
   final AuthUser currentUser;
   final Future<void> Function() onLogout;
+  final VoidCallback onOpenChangelog;
 
   @override
   Widget build(BuildContext context) {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
       children: [
-        Text(
-          'Gateway account',
-          style: Theme.of(context).textTheme.headlineLarge,
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                'Gateway account',
+                style: Theme.of(context).textTheme.headlineLarge,
+              ),
+            ),
+            IconButton(
+              onPressed: onOpenChangelog,
+              icon: Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: WiFenceColors.card,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: WiFenceColors.line),
+                ),
+                child: const Icon(
+                  Icons.article_outlined,
+                  color: WiFenceColors.deepSea,
+                ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 8),
         Text(
