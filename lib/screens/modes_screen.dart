@@ -55,6 +55,51 @@ class _ModesScreenState extends State<ModesScreen> {
     await _refresh();
   }
 
+  Future<void> _editProfileRoutine(
+    ModeProfile profile,
+    List<Device> devices,
+    List<ModePreset> presets,
+  ) async {
+    final selectedPreset = await showModalBottomSheet<ModePreset?>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _ProfileRoutineSheet(
+        profile: profile,
+        devices: devices,
+        presets: presets,
+      ),
+    );
+
+    if (selectedPreset == null || !mounted) {
+      return;
+    }
+
+    try {
+      await widget.apiClient.updateProfileSchedule(
+        profileId: profile.id,
+        name: selectedPreset.label,
+        daysOfWeek: selectedPreset.defaultDaysOfWeek,
+        startsAtMinute: selectedPreset.defaultStartsAtMinute,
+        endsAtMinute: selectedPreset.defaultEndsAtMinute,
+        modeKey: selectedPreset.key,
+      );
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Applied ${selectedPreset.label.toLowerCase()} to ${profile.name}.')),
+      );
+      await _refresh();
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<ModesOverview>(
@@ -130,6 +175,38 @@ class _ModesScreenState extends State<ModesScreen> {
                 ),
               ),
               const SizedBox(height: 24),
+              Row(
+                children: [
+                  Text(
+                    'Group routines',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const Spacer(),
+                  Text(
+                    '${overview.profiles.length} profiles',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              if (overview.profiles.isEmpty)
+                const _EmptyGroupCard()
+              else
+                for (final profile in overview.profiles) ...[
+                  _ProfileRoutineCard(
+                    profile: profile,
+                    schedule: _resolveProfileSchedule(
+                      _devicesForProfile(overview.devices, profile.id),
+                    ),
+                    onTap: () => _editProfileRoutine(
+                      profile,
+                      _devicesForProfile(overview.devices, profile.id),
+                      overview.presets,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                ],
+              const SizedBox(height: 10),
               Row(
                 children: [
                   Text(
@@ -342,6 +419,121 @@ class _PresetCard extends StatelessWidget {
             style: Theme.of(context).textTheme.bodySmall,
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ProfileRoutineCard extends StatelessWidget {
+  const _ProfileRoutineCard({
+    required this.profile,
+    required this.schedule,
+    required this.onTap,
+  });
+
+  final ModeProfile profile;
+  final _DeviceSchedule? schedule;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = profile.color == null ? WiFenceColors.cobalt : _colorFromHex(profile.color!);
+    final resolvedSchedule = schedule;
+    final statusText = schedule == null
+        ? 'No shared routine yet'
+        : '${resolvedSchedule!.name} - ${_formatRoutineWindow(resolvedSchedule.startsAtMinute, resolvedSchedule.endsAtMinute)}';
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(28),
+      child: Ink(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: WiFenceColors.card,
+          borderRadius: BorderRadius.circular(28),
+          border: Border.all(color: WiFenceColors.line),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                color: accent.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Icon(Icons.people_alt_rounded, color: accent),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          profile.name,
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: accent.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Text(
+                          '${profile.deviceCount} devices',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: accent,
+                                fontWeight: FontWeight.w700,
+                              ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    statusText,
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: WiFenceColors.ink,
+                        ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    schedule == null
+                        ? 'Apply one preset routine to the whole group in a single step.'
+                        : '${profile.scheduledDeviceCount}/${profile.deviceCount} devices currently follow this routine.',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Icon(Icons.arrow_forward_ios_rounded, size: 18, color: WiFenceColors.muted),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyGroupCard extends StatelessWidget {
+  const _EmptyGroupCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: WiFenceColors.card,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: WiFenceColors.line),
+      ),
+      child: Text(
+        'Assign devices to profiles like Kids or Guests to unlock one-tap shared routines.',
+        style: Theme.of(context).textTheme.bodyLarge,
       ),
     );
   }
@@ -785,6 +977,148 @@ class _RoutineEditorSheetState extends State<_RoutineEditorSheet> {
   }
 }
 
+class _ProfileRoutineSheet extends StatelessWidget {
+  const _ProfileRoutineSheet({
+    required this.profile,
+    required this.devices,
+    required this.presets,
+  });
+
+  final ModeProfile profile;
+  final List<Device> devices;
+  final List<ModePreset> presets;
+
+  @override
+  Widget build(BuildContext context) {
+    final currentSchedule = _resolveProfileSchedule(devices);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 20, 12, 12),
+      child: Material(
+        color: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: WiFenceColors.card,
+            borderRadius: BorderRadius.circular(32),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          profile.name,
+                          style: Theme.of(context).textTheme.headlineSmall,
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Apply a shared routine to all ${profile.deviceCount} devices in this group.',
+                          style: Theme.of(context).textTheme.bodyLarge,
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+                ],
+              ),
+              if (currentSchedule != null) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: WiFenceColors.canvas,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    'Current: ${currentSchedule.name} - ${_formatRoutineWindow(currentSchedule.startsAtMinute, currentSchedule.endsAtMinute)}',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: WiFenceColors.ink,
+                        ),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 20),
+              for (var i = 0; i < presets.length; i++) ...[
+                _ProfilePresetTile(
+                  preset: presets[i],
+                  onTap: () => Navigator.of(context).pop(presets[i]),
+                ),
+                if (i != presets.length - 1) const SizedBox(height: 10),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ProfilePresetTile extends StatelessWidget {
+  const _ProfilePresetTile({
+    required this.preset,
+    required this.onTap,
+  });
+
+  final ModePreset preset;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = _colorFromHex(preset.accent);
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(22),
+      child: Ink(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: WiFenceColors.canvas,
+          borderRadius: BorderRadius.circular(22),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                color: accent.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(_iconForKey(preset.icon), color: accent),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    preset.label,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${_formatRoutineWindow(preset.defaultStartsAtMinute, preset.defaultEndsAtMinute)} · ${_formatDaySet(preset.defaultDaysOfWeek)}',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.arrow_forward_rounded, color: WiFenceColors.muted),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _TimeButton extends StatelessWidget {
   const _TimeButton({
     required this.label,
@@ -862,6 +1196,20 @@ extension _ScheduleLookup on Device {
       modeKey: match.modeKey,
     );
   }
+}
+
+List<Device> _devicesForProfile(List<Device> devices, int profileId) {
+  return devices.where((device) => device.profile?.id == profileId).toList();
+}
+
+_DeviceSchedule? _resolveProfileSchedule(List<Device> devices) {
+  for (final device in devices) {
+    final schedule = device.schedule;
+    if (schedule != null) {
+      return schedule;
+    }
+  }
+  return null;
 }
 
 Color _colorFromHex(String hex) {

@@ -245,6 +245,40 @@ class ApiClient {
     return Device.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
   }
 
+  Future<void> updateProfileSchedule({
+    required int profileId,
+    required String name,
+    required List<int> daysOfWeek,
+    required int startsAtMinute,
+    required int endsAtMinute,
+    String? modeKey,
+  }) async {
+    final response = await _client.put(
+      Uri.parse('$_baseUrl/profiles/$profileId/schedule'),
+      headers: _jsonHeaders(),
+      body: jsonEncode({
+        'name': name,
+        'days_of_week': daysOfWeek,
+        'starts_at_minute': startsAtMinute,
+        'ends_at_minute': endsAtMinute,
+        'mode_key': modeKey,
+      }),
+    );
+    if (response.statusCode != 200) {
+      throw Exception(_errorMessage(response, 'Failed to save profile routine'));
+    }
+  }
+
+  Future<void> clearProfileSchedule(int profileId) async {
+    final response = await _client.delete(
+      Uri.parse('$_baseUrl/profiles/$profileId/schedule'),
+      headers: _headers(),
+    );
+    if (response.statusCode != 200) {
+      throw Exception(_errorMessage(response, 'Failed to clear profile routine'));
+    }
+  }
+
   Future<void> _post(String path) async {
     final response = await _client.post(
       Uri.parse('$_baseUrl$path'),
