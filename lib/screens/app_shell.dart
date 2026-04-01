@@ -3,21 +3,27 @@ import 'package:flutter/material.dart';
 import '../models/auth.dart';
 import '../services/api_client.dart';
 import '../theme/wifence_theme.dart';
+import 'audit_log_screen.dart';
 import 'changelog_screen.dart';
 import 'dashboard_screen.dart';
 import 'enforcement_settings_screen.dart';
 import 'modes_screen.dart';
+import 'trusted_devices_screen.dart';
 
 class WiFenceAppShell extends StatefulWidget {
   const WiFenceAppShell({
     super.key,
     required this.apiClient,
     required this.currentUser,
+    required this.currentTrustedDevice,
+    required this.currentDeviceId,
     required this.onLogout,
   });
 
   final ApiClient apiClient;
   final AuthUser currentUser;
+  final TrustedDevice? currentTrustedDevice;
+  final String currentDeviceId;
   final Future<void> Function() onLogout;
 
   @override
@@ -42,6 +48,7 @@ class _WiFenceAppShellState extends State<WiFenceAppShell> {
     ),
     _AccountStageScreen(
       currentUser: widget.currentUser,
+      currentTrustedDevice: widget.currentTrustedDevice,
       onLogout: widget.onLogout,
       onOpenEnforcement: () {
         Navigator.of(context).push(
@@ -50,10 +57,27 @@ class _WiFenceAppShellState extends State<WiFenceAppShell> {
           ),
         );
       },
+      onOpenTrustedDevices: () {
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => TrustedDevicesScreen(
+              apiClient: widget.apiClient,
+              currentDeviceId: widget.currentDeviceId,
+            ),
+          ),
+        );
+      },
       onOpenChangelog: () {
         Navigator.of(context).push(
           MaterialPageRoute<void>(
             builder: (_) => const ChangelogScreen(),
+          ),
+        );
+      },
+      onOpenAuditLog: () {
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => AuditLogScreen(apiClient: widget.apiClient),
           ),
         );
       },
@@ -311,18 +335,27 @@ class _FeatureStageScreen extends StatelessWidget {
 class _AccountStageScreen extends StatelessWidget {
   const _AccountStageScreen({
     required this.currentUser,
+    required this.currentTrustedDevice,
     required this.onLogout,
     required this.onOpenEnforcement,
+    required this.onOpenTrustedDevices,
     required this.onOpenChangelog,
+    required this.onOpenAuditLog,
   });
 
   final AuthUser currentUser;
+  final TrustedDevice? currentTrustedDevice;
   final Future<void> Function() onLogout;
   final VoidCallback onOpenEnforcement;
+  final VoidCallback onOpenTrustedDevices;
   final VoidCallback onOpenChangelog;
+  final VoidCallback onOpenAuditLog;
 
   @override
   Widget build(BuildContext context) {
+    final deviceRole = currentTrustedDevice?.role ?? 'viewer';
+    final isOwner = deviceRole == 'owner';
+    final canViewAudit = deviceRole == 'owner' || deviceRole == 'manager';
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
       children: [
@@ -334,22 +367,57 @@ class _AccountStageScreen extends StatelessWidget {
                 style: Theme.of(context).textTheme.headlineLarge,
               ),
             ),
-            IconButton(
-              onPressed: onOpenEnforcement,
-              icon: Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: WiFenceColors.card,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: WiFenceColors.line),
-                ),
-                child: const Icon(
-                  Icons.shield_outlined,
-                  color: WiFenceColors.deepSea,
+            if (canViewAudit)
+              IconButton(
+                onPressed: onOpenAuditLog,
+                icon: Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: WiFenceColors.card,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: WiFenceColors.line),
+                  ),
+                  child: const Icon(
+                    Icons.history_rounded,
+                    color: WiFenceColors.deepSea,
+                  ),
                 ),
               ),
-            ),
+            if (isOwner)
+              IconButton(
+                onPressed: onOpenTrustedDevices,
+                icon: Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: WiFenceColors.card,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: WiFenceColors.line),
+                  ),
+                  child: const Icon(
+                    Icons.verified_user_outlined,
+                    color: WiFenceColors.deepSea,
+                  ),
+                ),
+              ),
+            if (isOwner)
+              IconButton(
+                onPressed: onOpenEnforcement,
+                icon: Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: WiFenceColors.card,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: WiFenceColors.line),
+                  ),
+                  child: const Icon(
+                    Icons.shield_outlined,
+                    color: WiFenceColors.deepSea,
+                  ),
+                ),
+              ),
             IconButton(
               onPressed: onOpenChangelog,
               icon: Container(
@@ -404,6 +472,21 @@ class _AccountStageScreen extends StatelessWidget {
               Text(
                 currentUser.role,
                 style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: WiFenceColors.cobalt.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Text(
+                  '${deviceRole[0].toUpperCase()}${deviceRole.substring(1)} device approval',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: WiFenceColors.cobalt,
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
               ),
               const SizedBox(height: 22),
               FilledButton(

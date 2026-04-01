@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'models/auth.dart';
+import 'models/gateway.dart';
 import 'screens/app_shell.dart';
 import 'screens/auth_screen.dart';
 import 'services/api_client.dart';
@@ -21,6 +22,7 @@ class WiFenceApp extends StatefulWidget {
 class _WiFenceAppState extends State<WiFenceApp> {
   final ApiClient _apiClient = ApiClient();
   final SessionStore _sessionStore = SessionStore();
+  String? _deviceId;
 
   late Future<_BootstrapState> _bootstrapFuture;
 
@@ -32,17 +34,27 @@ class _WiFenceAppState extends State<WiFenceApp> {
 
   Future<_BootstrapState> _bootstrap() async {
     try {
+      final deviceId = await _sessionStore.getOrCreateDeviceId();
+      _deviceId = deviceId;
+      _apiClient.setDeviceIdentity(
+        deviceId: deviceId,
+        deviceName: 'This phone',
+        devicePlatform: 'android',
+      );
       final token = await _sessionStore.readToken();
       _apiClient.setAccessToken(token);
 
+      final readiness = await _apiClient.fetchGatewayReadiness();
       final setupStatus = await _apiClient.fetchSetupStatus();
 
       if (token != null && setupStatus.isConfigured) {
         try {
-          final user = await _apiClient.fetchMe();
+          final authContext = await _apiClient.fetchMe();
           return _BootstrapState(
+            readiness: readiness,
             setupStatus: setupStatus,
-            currentUser: user,
+            currentUser: authContext.user,
+            currentTrustedDevice: authContext.trustedDevice,
           );
         } catch (_) {
           await _sessionStore.clear();
@@ -50,7 +62,10 @@ class _WiFenceAppState extends State<WiFenceApp> {
         }
       }
 
-      return _BootstrapState(setupStatus: setupStatus);
+      return _BootstrapState(
+        readiness: readiness,
+        setupStatus: setupStatus,
+      );
     } catch (error) {
       return _BootstrapState(errorMessage: error.toString());
     }
@@ -68,6 +83,7 @@ class _WiFenceAppState extends State<WiFenceApp> {
             requiresOwnerSetup: false,
           ),
           currentUser: session.user,
+          currentTrustedDevice: session.trustedDevice,
         ),
       );
     });
@@ -106,12 +122,18 @@ class _WiFenceAppState extends State<WiFenceApp> {
             return WiFenceAppShell(
               apiClient: _apiClient,
               currentUser: state.currentUser!,
+              currentTrustedDevice: state.currentTrustedDevice,
+              currentDeviceId: _deviceId ?? '',
               onLogout: _handleLogout,
             );
           }
 
           return AuthScreen(
             apiClient: _apiClient,
+            deviceId: _deviceId ?? '',
+            deviceName: 'This phone',
+            devicePlatform: 'android',
+            initialReadiness: state.readiness,
             initialStatus: state.setupStatus,
             initialErrorMessage: state.errorMessage,
             onAuthenticated: _handleAuthenticated,
@@ -124,12 +146,16 @@ class _WiFenceAppState extends State<WiFenceApp> {
 
 class _BootstrapState {
   const _BootstrapState({
+    this.readiness,
     this.setupStatus,
     this.currentUser,
+    this.currentTrustedDevice,
     this.errorMessage,
   });
 
+  final GatewayReadiness? readiness;
   final SetupStatus? setupStatus;
   final AuthUser? currentUser;
+  final TrustedDevice? currentTrustedDevice;
   final String? errorMessage;
 }

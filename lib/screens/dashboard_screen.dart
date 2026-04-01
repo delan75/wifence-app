@@ -35,10 +35,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final results = await Future.wait([
       widget.apiClient.fetchGatewayMeta(),
       widget.apiClient.fetchDashboard(),
+      widget.apiClient.fetchGatewayReadiness(),
     ]);
     return _DashboardPayload(
       gatewayMeta: results[0] as GatewayMeta,
       dashboard: results[1] as DashboardData,
+      readiness: results[2] as GatewayReadiness,
     );
   }
 
@@ -95,6 +97,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         }
 
         if (snapshot.hasError) {
+          final message = snapshot.error.toString().replaceFirst('Exception: ', '');
           return ListView(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
             children: [
@@ -104,6 +107,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               const SizedBox(height: 22),
               _OfflineGatewayCard(
+                message: message,
                 onRetry: _refresh,
               ),
             ],
@@ -125,10 +129,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
               _ControlCenterCard(
                 stats: dashboard.stats,
                 gatewayMode: payload.gatewayMeta.mode,
+                readiness: payload.readiness,
               ),
               const SizedBox(height: 18),
               _DiscoveryStrip(
                 isLiveMode: payload.gatewayMeta.isLiveMode,
+                readiness: payload.readiness,
                 isScanning: _isScanning,
                 onScan: _scanNetwork,
               ),
@@ -151,6 +157,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               const SizedBox(height: 12),
               if (dashboard.devices.isEmpty)
                 _EmptyDiscoveryCard(
+                  readiness: payload.readiness,
                   isScanning: _isScanning,
                   onScan: _scanNetwork,
                 )
@@ -259,10 +266,12 @@ class _ControlCenterCard extends StatelessWidget {
   const _ControlCenterCard({
     required this.stats,
     required this.gatewayMode,
+    required this.readiness,
   });
 
   final DashboardStats stats;
   final String gatewayMode;
+  final GatewayReadiness readiness;
 
   @override
   Widget build(BuildContext context) {
@@ -289,7 +298,7 @@ class _ControlCenterCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            gatewayMode == 'live' ? 'Live gateway' : 'Control center',
+            _eyebrowText(),
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: Colors.white70,
                   letterSpacing: 0.8,
@@ -297,7 +306,7 @@ class _ControlCenterCard extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            'Household internet,\nunder control.',
+            _headlineText(),
             style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                   color: Colors.white,
                   height: 1.1,
@@ -305,7 +314,7 @@ class _ControlCenterCard extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            '${stats.onlineDevices} devices are active right now. ${stats.pausedDevices} are paused and ${stats.quotaExhaustedDevices} have hit their limit.',
+            _summaryText(),
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: Colors.white.withValues(alpha: 0.78),
                 ),
@@ -352,16 +361,54 @@ class _ControlCenterCard extends StatelessWidget {
       ),
     );
   }
+
+  String _eyebrowText() {
+    if (readiness.hasBlockingConflicts) {
+      return 'Gateway attention needed';
+    }
+    if (readiness.hasConflicts) {
+      return 'Gateway advisory';
+    }
+    return gatewayMode == 'live' ? 'Live gateway' : 'Control center';
+  }
+
+  String _headlineText() {
+    if (readiness.hasBlockingConflicts) {
+      return 'Gateway conflicts are\nblocking enforcement.';
+    }
+    if (readiness.hasConflicts) {
+      return 'Gateway is live,\nbut needs review.';
+    }
+    if (stats.onlineDevices == 0 && stats.totalDevices == 0) {
+      return 'Ready to discover\nyour network.';
+    }
+    return 'Household internet,\nunder control.';
+  }
+
+  String _summaryText() {
+    if (readiness.hasBlockingConflicts) {
+      return readiness.summary;
+    }
+    if (readiness.hasConflicts) {
+      return readiness.advisory ?? readiness.summary;
+    }
+    if (stats.totalDevices == 0) {
+      return 'WiFence is connected but has not discovered any devices yet. Run a scan to map the household.';
+    }
+    return '${stats.onlineDevices} devices are active right now. ${stats.pausedDevices} are paused and ${stats.quotaExhaustedDevices} have hit their limit.';
+  }
 }
 
 class _DiscoveryStrip extends StatelessWidget {
   const _DiscoveryStrip({
     required this.isLiveMode,
+    required this.readiness,
     required this.isScanning,
     required this.onScan,
   });
 
   final bool isLiveMode;
+  final GatewayReadiness readiness;
   final bool isScanning;
   final Future<void> Function() onScan;
 
@@ -391,14 +438,20 @@ class _DiscoveryStrip extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isLiveMode ? 'Gateway discovery' : 'Demo gateway',
+                  readiness.hasConflicts
+                      ? 'Gateway advisory'
+                      : isLiveMode
+                          ? 'Gateway discovery'
+                          : 'Demo gateway',
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  isLiveMode
-                      ? 'Scan the local network and pull fresh devices into WiFence.'
-                      : 'Switch the gateway to live mode to discover real devices.',
+                  readiness.hasConflicts
+                      ? (readiness.advisory ?? readiness.summary)
+                      : isLiveMode
+                          ? 'Scan the local network and pull fresh devices into WiFence.'
+                          : 'Switch the gateway to live mode to discover real devices.',
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
               ],
@@ -643,9 +696,11 @@ class _SignalOrbitPainter extends CustomPainter {
 
 class _OfflineGatewayCard extends StatelessWidget {
   const _OfflineGatewayCard({
+    required this.message,
     required this.onRetry,
   });
 
+  final String message;
   final Future<void> Function() onRetry;
 
   @override
@@ -679,7 +734,9 @@ class _OfflineGatewayCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Connect the phone to the same Wi-Fi as the gateway, then pull to refresh.',
+            message.isEmpty
+                ? 'Connect the phone to the same Wi-Fi as the gateway, then pull to refresh.'
+                : message,
             style: Theme.of(context).textTheme.bodyLarge,
           ),
           const SizedBox(height: 18),
@@ -695,10 +752,12 @@ class _OfflineGatewayCard extends StatelessWidget {
 
 class _EmptyDiscoveryCard extends StatelessWidget {
   const _EmptyDiscoveryCard({
+    required this.readiness,
     required this.isScanning,
     required this.onScan,
   });
 
+  final GatewayReadiness readiness;
   final bool isScanning;
   final Future<void> Function() onScan;
 
@@ -730,7 +789,9 @@ class _EmptyDiscoveryCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Run a network scan to let WiFence discover devices on the local gateway.',
+            readiness.hasConflicts
+                ? (readiness.advisory ?? readiness.summary)
+                : 'Run a network scan to let WiFence discover devices on the local gateway.',
             style: Theme.of(context).textTheme.bodyLarge,
           ),
           const SizedBox(height: 18),
@@ -748,8 +809,10 @@ class _DashboardPayload {
   const _DashboardPayload({
     required this.gatewayMeta,
     required this.dashboard,
+    required this.readiness,
   });
 
   final GatewayMeta gatewayMeta;
   final DashboardData dashboard;
+  final GatewayReadiness readiness;
 }
