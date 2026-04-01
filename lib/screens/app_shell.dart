@@ -5,6 +5,7 @@ import '../services/api_client.dart';
 import '../theme/wifence_theme.dart';
 import 'changelog_screen.dart';
 import 'dashboard_screen.dart';
+import 'enforcement_settings_screen.dart';
 import 'modes_screen.dart';
 
 class WiFenceAppShell extends StatefulWidget {
@@ -42,6 +43,13 @@ class _WiFenceAppShellState extends State<WiFenceAppShell> {
     _AccountStageScreen(
       currentUser: widget.currentUser,
       onLogout: widget.onLogout,
+      onOpenEnforcement: () {
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => EnforcementSettingsScreen(apiClient: widget.apiClient),
+          ),
+        );
+      },
       onOpenChangelog: () {
         Navigator.of(context).push(
           MaterialPageRoute<void>(
@@ -304,11 +312,13 @@ class _AccountStageScreen extends StatelessWidget {
   const _AccountStageScreen({
     required this.currentUser,
     required this.onLogout,
+    required this.onOpenEnforcement,
     required this.onOpenChangelog,
   });
 
   final AuthUser currentUser;
   final Future<void> Function() onLogout;
+  final VoidCallback onOpenEnforcement;
   final VoidCallback onOpenChangelog;
 
   @override
@@ -322,6 +332,22 @@ class _AccountStageScreen extends StatelessWidget {
               child: Text(
                 'Gateway account',
                 style: Theme.of(context).textTheme.headlineLarge,
+              ),
+            ),
+            IconButton(
+              onPressed: onOpenEnforcement,
+              icon: Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: WiFenceColors.card,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: WiFenceColors.line),
+                ),
+                child: const Icon(
+                  Icons.shield_outlined,
+                  color: WiFenceColors.deepSea,
+                ),
               ),
             ),
             IconButton(

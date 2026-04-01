@@ -28,7 +28,52 @@ class ChangelogScreen extends StatelessWidget {
               ),
               SizedBox(height: 14),
               _VersionCard(
-                version: '0.3.0',
+                version: '0.4.2',
+                tag: 'Control surface',
+                accent: WiFenceColors.deepSea,
+                title: 'In-app enforcement controls for real gateway hardening',
+                summary:
+                    'Encrypted DNS hardening is no longer hidden behind environment variables. WiFence now exposes a real gateway settings surface in the More tab for managing resolver-lock behavior and custom bypass targets.',
+                bullets: [
+                  'The gateway now exposes dedicated preferences routes for encrypted DNS hardening settings.',
+                  'Owners can toggle hardening and Firefox canary handling from the app.',
+                  'Custom resolver domains plus IPv4 and IPv6 targets can now be added in-app.',
+                  'These controls persist on the gateway and trigger enforcement sync after changes.',
+                ],
+              ),
+              SizedBox(height: 14),
+              _VersionCard(
+                version: '0.4.1',
+                tag: 'Enforcement hardening',
+                accent: WiFenceColors.cobalt,
+                title: 'Encrypted DNS bypass reduction and app-specific resolver targeting',
+                summary:
+                    'WiFence now blocks a broader set of known encrypted DNS providers, supports Firefox-style DoH canary signaling, and allows extra resolver domains or IPs to be configured for app-specific hardening.',
+                bullets: [
+                  'Known encrypted DNS targets now include Cloudflare, Google, Quad9, AdGuard, OpenDNS, and NextDNS domains.',
+                  'dnsmasq now serves the use-application-dns.net canary response for compatible clients that should stay on local DNS.',
+                  'Encrypted DNS hardening now blocks known provider traffic on TCP 443 and 853 plus UDP 443, 784, and 8853.',
+                  'Gateway configuration now supports extra encrypted DNS domains and IPs without code changes.',
+                ],
+              ),
+              SizedBox(height: 14),
+              _VersionCard(
+                version: '0.4.0',
+                tag: 'Enforcement milestone',
+                accent: WiFenceColors.deepSea,
+                title: 'Linux gateway execution and resolver lock foundation',
+                summary:
+                    'WiFence now renders real dnsmasq plus nftables enforcement artifacts, supports Linux-side application, and adds DNS lock rules to stop standard resolver bypasses.',
+                bullets: [
+                  'dnsmasq fragments now map blocked domains into nftables sets for category enforcement.',
+                  'nftables rulesets now include full-device lockouts, category IP drops, and resolver lock redirects.',
+                  'Managed devices are redirected back to local DNS on port 53 and blocked on port 853.',
+                  'The gateway now exposes enforcement status and sync routes for inspection and activation.',
+                ],
+              ),
+              SizedBox(height: 14),
+              _VersionCard(
+                version: '0.3.x',
                 tag: 'Current build',
                 accent: WiFenceColors.cobalt,
                 title: 'Live-first gateway and reusable household flows',
@@ -191,7 +236,7 @@ class _ProgressStrip extends StatelessWidget {
       children: const [
         Expanded(
           child: _StatTile(
-            value: '3',
+            value: '6',
             label: 'Core phases shipped',
             accent: WiFenceColors.sky,
           ),
@@ -199,7 +244,7 @@ class _ProgressStrip extends StatelessWidget {
         SizedBox(width: 12),
         Expanded(
           child: _StatTile(
-            value: '10+',
+            value: '14+',
             label: 'Live local API routes',
             accent: WiFenceColors.mint,
           ),
@@ -421,6 +466,22 @@ class _CapabilityGrid extends StatelessWidget {
         title: 'Category rules',
         description: 'Live category metadata from the gateway with category block creation in-device.',
       ),
+      (
+        title: 'Resolver lock',
+        description: 'Gateway rules now redirect standard DNS traffic and block port 853 to reduce bypass paths.',
+      ),
+      (
+        title: 'Linux apply path',
+        description: 'WiFence can now move from dry-run artifacts into actual nftables application on Linux hardware.',
+      ),
+      (
+        title: 'Encrypted DNS hardening',
+        description: 'Known DoH and resolver targets can be blocked by provider set, browser canary, and configurable app-specific domains or IPs.',
+      ),
+      (
+        title: 'Admin controls',
+        description: 'Gateway enforcement settings now have a dedicated mobile control surface instead of living only in environment config.',
+      ),
     ];
 
     return Wrap(
@@ -468,10 +529,10 @@ class _NextUpCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const nextItems = [
-      'Real enforcement adapters for DNS filtering and firewall rules.',
       'Cleaner onboarding around gateway pairing and first-network setup.',
       'True network pulse views for speed, status, and internet health.',
       'Richer analytics around schedule hits, daily summaries, and household trends.',
+      'Harder bypass coverage for VPN tunnels, custom in-app proxies, and encrypted traffic that hides behind non-standard endpoints.',
     ];
 
     return Container(

@@ -7,6 +7,7 @@ import '../models/category.dart';
 import '../models/dashboard.dart';
 import '../models/device.dart';
 import '../models/gateway.dart';
+import '../models/gateway_preferences.dart';
 import '../models/modes.dart';
 
 class ApiClient {
@@ -190,6 +191,37 @@ class ApiClient {
     }
 
     return DiscoveryReport.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+  }
+
+  Future<GatewayPreferences> fetchGatewayPreferences() async {
+    final response = await _client.get(
+      Uri.parse('$_baseUrl/gateway/preferences'),
+      headers: _headers(),
+    );
+    if (response.statusCode != 200) {
+      throw Exception(_errorMessage(response, 'Failed to load gateway preferences'));
+    }
+
+    return GatewayPreferences.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+  }
+
+  Future<GatewayPreferences> updateGatewayPreferences(
+    GatewayPreferences preferences,
+  ) async {
+    final response = await _client.put(
+      Uri.parse('$_baseUrl/gateway/preferences'),
+      headers: _jsonHeaders(),
+      body: jsonEncode(preferences.toJson()),
+    );
+    if (response.statusCode != 200) {
+      throw Exception(_errorMessage(response, 'Failed to update gateway preferences'));
+    }
+
+    return GatewayPreferences.fromJson(
       jsonDecode(response.body) as Map<String, dynamic>,
     );
   }
