@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../models/gateway.dart';
 import '../models/gateway_preferences.dart';
 import '../services/api_client.dart';
 import '../theme/wifence_theme.dart';
@@ -19,6 +20,7 @@ class EnforcementSettingsScreen extends StatefulWidget {
 
 class _EnforcementSettingsScreenState extends State<EnforcementSettingsScreen> {
   GatewayPreferences? _preferences;
+  EnforcementStatus? _status;
   bool _loading = true;
   bool _saving = false;
   String? _error;
@@ -37,9 +39,11 @@ class _EnforcementSettingsScreenState extends State<EnforcementSettingsScreen> {
 
     try {
       final preferences = await widget.apiClient.fetchGatewayPreferences();
+      final status = await widget.apiClient.fetchEnforcementStatus();
       if (!mounted) return;
       setState(() {
         _preferences = preferences;
+        _status = status;
       });
     } catch (error) {
       if (!mounted) return;
@@ -47,10 +51,11 @@ class _EnforcementSettingsScreenState extends State<EnforcementSettingsScreen> {
         _error = error.toString().replaceFirst('Exception: ', '');
       });
     } finally {
-      if (!mounted) return;
-      setState(() {
-        _loading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _loading = false;
+        });
+      }
     }
   }
 
@@ -62,13 +67,17 @@ class _EnforcementSettingsScreenState extends State<EnforcementSettingsScreen> {
 
     try {
       final updated = await widget.apiClient.updateGatewayPreferences(preferences);
+      final status = await widget.apiClient.fetchEnforcementStatus();
       if (!mounted) return;
       setState(() {
         _preferences = updated;
+        _status = status;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Gateway enforcement settings updated')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Gateway enforcement settings updated')),
+        );
+      }
     } catch (error) {
       if (!mounted) return;
       setState(() {
@@ -78,10 +87,11 @@ class _EnforcementSettingsScreenState extends State<EnforcementSettingsScreen> {
         SnackBar(content: Text(_error ?? 'Failed to save settings')),
       );
     } finally {
-      if (!mounted) return;
-      setState(() {
-        _saving = false;
-      });
+      if (mounted) {
+        setState(() {
+          _saving = false;
+        });
+      }
     }
   }
 
@@ -157,6 +167,10 @@ class _EnforcementSettingsScreenState extends State<EnforcementSettingsScreen> {
       return;
     }
 
+    if (!mounted) {
+      return;
+    }
+
     if (existing.contains(value)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('That item is already listed')),
@@ -170,6 +184,7 @@ class _EnforcementSettingsScreenState extends State<EnforcementSettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final preferences = _preferences;
+    final status = _status;
 
     return Scaffold(
       backgroundColor: WiFenceColors.canvas,
@@ -200,6 +215,7 @@ class _EnforcementSettingsScreenState extends State<EnforcementSettingsScreen> {
                   saving: _saving,
                   hardeningEnabled: preferences.hardenEncryptedDns,
                   canaryEnabled: preferences.enableDohCanaryDomain,
+                  enforcementBlocked: status?.enforcementBlocked ?? false,
                 ),
                 const SizedBox(height: 20),
                 if (_error != null)
@@ -207,6 +223,10 @@ class _EnforcementSettingsScreenState extends State<EnforcementSettingsScreen> {
                     padding: const EdgeInsets.only(bottom: 16),
                     child: _InlineError(message: _error!),
                   ),
+                if (status != null && status.conflicts.isNotEmpty) ...[
+                  _ConflictPanel(status: status),
+                  const SizedBox(height: 16),
+                ],
                 _ToggleSection(
                   title: 'Encrypted DNS hardening',
                   subtitle:
@@ -356,6 +376,94 @@ class _EnforcementSettingsScreenState extends State<EnforcementSettingsScreen> {
   }
 }
 
+class _ConflictPanel extends StatelessWidget {
+  const _ConflictPanel({
+    required this.status,
+  });
+
+  final EnforcementStatus status;
+
+  @override
+  Widget build(BuildContext context) {
+    final blocked = status.enforcementBlocked;
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: blocked ? const Color(0xFFFFF1EB) : const Color(0xFFFFF8EA),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(
+          color: blocked ? const Color(0xFFFFD0BF) : const Color(0xFFF1D69A),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                blocked
+                    ? Icons.gpp_bad_rounded
+                    : Icons.info_outline_rounded,
+                color: blocked ? WiFenceColors.coral : const Color(0xFFBC7A19),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  blocked
+                      ? 'Live enforcement is blocked'
+                      : 'Gateway conflicts need review',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            status.message,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: WiFenceColors.ink,
+                ),
+          ),
+          const SizedBox(height: 14),
+          ...status.conflicts.take(4).map(
+            (conflict) => Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.72),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      conflict.title,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      conflict.summary,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      conflict.resolution,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: WiFenceColors.muted,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _SettingsBackground extends StatelessWidget {
   const _SettingsBackground();
 
@@ -397,15 +505,21 @@ class _HeroCard extends StatelessWidget {
     required this.saving,
     required this.hardeningEnabled,
     required this.canaryEnabled,
+    required this.enforcementBlocked,
   });
 
   final bool saving;
   final bool hardeningEnabled;
   final bool canaryEnabled;
+  final bool enforcementBlocked;
 
   @override
   Widget build(BuildContext context) {
-    final state = hardeningEnabled ? 'Active' : 'Relaxed';
+    final state = enforcementBlocked
+        ? 'Blocked'
+        : hardeningEnabled
+            ? 'Active'
+            : 'Relaxed';
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -449,7 +563,7 @@ class _HeroCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(18),
                 ),
                 child: Text(
-                  saving ? 'Saving…' : state,
+                  saving ? 'Saving...' : state,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w700,
@@ -479,7 +593,11 @@ class _HeroCard extends StatelessWidget {
             runSpacing: 10,
             children: [
               _HeroPill(
-                label: hardeningEnabled ? 'Known DoH blocked' : 'Known DoH relaxed',
+                label: enforcementBlocked
+                    ? 'Gateway conflicted'
+                    : hardeningEnabled
+                        ? 'Known DoH blocked'
+                        : 'Known DoH relaxed',
               ),
               _HeroPill(
                 label: canaryEnabled ? 'Canary enabled' : 'Canary off',

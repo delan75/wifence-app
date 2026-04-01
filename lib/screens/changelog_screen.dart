@@ -28,6 +28,51 @@ class ChangelogScreen extends StatelessWidget {
               ),
               SizedBox(height: 14),
               _VersionCard(
+                version: '0.7.0',
+                tag: 'Security operations',
+                accent: WiFenceColors.mint,
+                title: 'QR pairing, device roles, and audit trails',
+                summary:
+                    'WiFence now supports scannable pairing passes, role-based device approval, and an audit trail that explains who changed what on the gateway.',
+                bullets: [
+                  'Trusted devices can now be approved as owner, manager, or viewer phones.',
+                  'Approved owner phones can generate QR pairing passes with a chosen role.',
+                  'The auth flow now accepts WiFence QR pairing payloads in addition to manual code entry.',
+                  'An audit timeline now captures pairing, login, policy edits, and gateway security changes.',
+                ],
+              ),
+              SizedBox(height: 14),
+              _VersionCard(
+                version: '0.6.0',
+                tag: 'Trusted device layer',
+                accent: WiFenceColors.cobalt,
+                title: 'Paired-phone-only administration',
+                summary:
+                    'WiFence now ties gateway administration to approved phones. The first owner setup trusts the first device, later phones need a one-time pairing code, and trusted devices can be revoked from the app.',
+                bullets: [
+                  'Owner setup now auto-trusts the first phone that claims the gateway.',
+                  'Unpaired phones are refused at login until they complete pairing.',
+                  'Approved phones can generate short-lived pairing codes for new devices.',
+                  'Trusted devices can now be reviewed and revoked from the More tab.',
+                ],
+              ),
+              SizedBox(height: 14),
+              _VersionCard(
+                version: '0.5.0',
+                tag: 'Gateway trust layer',
+                accent: WiFenceColors.coral,
+                title: 'Conflict-aware onboarding and enforcement refusal',
+                summary:
+                    'WiFence now checks whether the gateway is already controlled by competing DNS or firewall services, warns the owner during setup, and refuses live enforcement on conflicted Linux hosts.',
+                bullets: [
+                  'First setup now surfaces gateway readiness instead of asking the owner to trust a blind login screen.',
+                  'The gateway detects competing DNS and firewall services and classifies them as warnings or blocking conflicts.',
+                  'Live enforcement can now move into a conflicted state and refuse apply until blockers are resolved.',
+                  'The enforcement screen now shows conflict details and concrete cleanup guidance.',
+                ],
+              ),
+              SizedBox(height: 14),
+              _VersionCard(
                 version: '0.4.2',
                 tag: 'Control surface',
                 accent: WiFenceColors.deepSea,
@@ -236,7 +281,7 @@ class _ProgressStrip extends StatelessWidget {
       children: const [
         Expanded(
           child: _StatTile(
-            value: '6',
+            value: '9',
             label: 'Core phases shipped',
             accent: WiFenceColors.sky,
           ),
@@ -482,6 +527,26 @@ class _CapabilityGrid extends StatelessWidget {
         title: 'Admin controls',
         description: 'Gateway enforcement settings now have a dedicated mobile control surface instead of living only in environment config.',
       ),
+      (
+        title: 'Gateway trust',
+        description: 'WiFence now checks host readiness, warns about competing DNS or firewall services, and blocks unsafe live enforcement.',
+      ),
+      (
+        title: 'Trusted devices',
+        description: 'Gateway admin is now limited to paired phones, with one-time pairing codes and revocation controls.',
+      ),
+      (
+        title: 'Approval roles',
+        description: 'Each trusted phone can now be approved as owner, manager, or viewer with route-level permission checks on the gateway.',
+      ),
+      (
+        title: 'Audit trail',
+        description: 'Security events and policy changes are now recorded in a real timeline that can be reviewed from the app.',
+      ),
+      (
+        title: 'QR pairing',
+        description: 'Pairing passes can now be rendered as scannable QR codes, while manual codes remain available as a fallback.',
+      ),
     ];
 
     return Wrap(
@@ -529,7 +594,7 @@ class _NextUpCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const nextItems = [
-      'Cleaner onboarding around gateway pairing and first-network setup.',
+      'Cleaner first-network onboarding with gateway discovery, setup guidance, and success verification.',
       'True network pulse views for speed, status, and internet health.',
       'Richer analytics around schedule hits, daily summaries, and household trends.',
       'Harder bypass coverage for VPN tunnels, custom in-app proxies, and encrypted traffic that hides behind non-standard endpoints.',

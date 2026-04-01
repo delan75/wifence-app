@@ -18,9 +18,24 @@ class ApiClient {
   final http.Client _client;
   final String _baseUrl;
   String? _accessToken;
+  String? _deviceId;
+  String? _deviceName;
+  String? _devicePlatform;
+
+  String get baseUrl => _baseUrl;
 
   void setAccessToken(String? token) {
     _accessToken = token;
+  }
+
+  void setDeviceIdentity({
+    required String deviceId,
+    required String deviceName,
+    String? devicePlatform,
+  }) {
+    _deviceId = deviceId;
+    _deviceName = deviceName;
+    _devicePlatform = devicePlatform;
   }
 
   Future<GatewayMeta> fetchGatewayMeta() async {
@@ -51,6 +66,9 @@ class ApiClient {
   Future<AuthSession> setupOwner({
     required String displayName,
     required String password,
+    required String deviceId,
+    required String deviceName,
+    String? devicePlatform,
   }) async {
     final response = await _client.post(
       Uri.parse('$_baseUrl/setup/owner'),
@@ -58,6 +76,9 @@ class ApiClient {
       body: jsonEncode({
         'display_name': displayName,
         'password': password,
+        'device_id': deviceId,
+        'device_name': deviceName,
+        'device_platform': devicePlatform,
       }),
     );
     if (response.statusCode != 200) {
@@ -74,6 +95,9 @@ class ApiClient {
   Future<AuthSession> login({
     required String displayName,
     required String password,
+    required String deviceId,
+    required String deviceName,
+    String? devicePlatform,
   }) async {
     final response = await _client.post(
       Uri.parse('$_baseUrl/auth/login'),
@@ -81,6 +105,9 @@ class ApiClient {
       body: jsonEncode({
         'display_name': displayName,
         'password': password,
+        'device_id': deviceId,
+        'device_name': deviceName,
+        'device_platform': devicePlatform,
       }),
     );
     if (response.statusCode != 200) {
@@ -94,7 +121,7 @@ class ApiClient {
     return session;
   }
 
-  Future<AuthUser> fetchMe() async {
+  Future<AuthContext> fetchMe() async {
     final response = await _client.get(
       Uri.parse('$_baseUrl/auth/me'),
       headers: _headers(),
@@ -103,7 +130,7 @@ class ApiClient {
       throw Exception(_errorMessage(response, 'Failed to load current user'));
     }
 
-    return AuthUser.fromJson(
+    return AuthContext.fromJson(
       jsonDecode(response.body) as Map<String, dynamic>,
     );
   }
@@ -195,6 +222,118 @@ class ApiClient {
     );
   }
 
+  Future<List<TrustedDevice>> fetchTrustedDevices() async {
+    final response = await _client.get(
+      Uri.parse('$_baseUrl/trusted-devices'),
+      headers: _headers(),
+    );
+    if (response.statusCode != 200) {
+      throw Exception(_errorMessage(response, 'Failed to load trusted devices'));
+    }
+
+    return (jsonDecode(response.body) as List<dynamic>)
+        .map((item) => TrustedDevice.fromJson(item as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<PairingCodeSession> createPairingCode({String role = 'manager'}) async {
+    final response = await _client.post(
+      Uri.parse('$_baseUrl/pairing-codes'),
+      headers: _jsonHeaders(),
+      body: jsonEncode({'role': role}),
+    );
+    if (response.statusCode != 200) {
+      throw Exception(_errorMessage(response, 'Failed to create pairing code'));
+    }
+
+    return PairingCodeSession.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+  }
+
+  Future<AuthSession> claimPairingCode({
+    required String pairingCode,
+    required String deviceId,
+    required String deviceName,
+    String? devicePlatform,
+  }) async {
+    final response = await _client.post(
+      Uri.parse('$_baseUrl/pairing/claim'),
+      headers: _jsonHeaders(),
+      body: jsonEncode({
+        'pairing_code': pairingCode,
+        'device_id': deviceId,
+        'device_name': deviceName,
+        'device_platform': devicePlatform,
+      }),
+    );
+    if (response.statusCode != 200) {
+      throw Exception(_errorMessage(response, 'Failed to pair this phone'));
+    }
+
+    final session = AuthSession.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+    setAccessToken(session.accessToken);
+    return session;
+  }
+
+  Future<void> revokeTrustedDevice(String trustedDeviceId) async {
+    final response = await _client.delete(
+      Uri.parse('$_baseUrl/trusted-devices/$trustedDeviceId'),
+      headers: _headers(),
+    );
+    if (response.statusCode != 200) {
+      throw Exception(_errorMessage(response, 'Failed to revoke trusted device'));
+    }
+  }
+
+  Future<TrustedDevice> updateTrustedDeviceRole({
+    required String trustedDeviceId,
+    required String role,
+  }) async {
+    final response = await _client.patch(
+      Uri.parse('$_baseUrl/trusted-devices/$trustedDeviceId'),
+      headers: _jsonHeaders(),
+      body: jsonEncode({'role': role}),
+    );
+    if (response.statusCode != 200) {
+      throw Exception(_errorMessage(response, 'Failed to update device approval'));
+    }
+
+    return TrustedDevice.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+  }
+
+  Future<List<AuditEvent>> fetchAuditLog({int limit = 80}) async {
+    final response = await _client.get(
+      Uri.parse('$_baseUrl/audit-log?limit=$limit'),
+      headers: _headers(),
+    );
+    if (response.statusCode != 200) {
+      throw Exception(_errorMessage(response, 'Failed to load audit history'));
+    }
+
+    return (jsonDecode(response.body) as List<dynamic>)
+        .map((item) => AuditEvent.fromJson(item as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<GatewayReadiness> fetchGatewayReadiness() async {
+    final response = await _client.get(
+      Uri.parse('$_baseUrl/gateway/readiness'),
+      headers: _headers(),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Failed to load gateway readiness');
+    }
+
+    return GatewayReadiness.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+  }
+
   Future<GatewayPreferences> fetchGatewayPreferences() async {
     final response = await _client.get(
       Uri.parse('$_baseUrl/gateway/preferences'),
@@ -205,6 +344,20 @@ class ApiClient {
     }
 
     return GatewayPreferences.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+  }
+
+  Future<EnforcementStatus> fetchEnforcementStatus() async {
+    final response = await _client.get(
+      Uri.parse('$_baseUrl/enforcement/status'),
+      headers: _headers(),
+    );
+    if (response.statusCode != 200) {
+      throw Exception(_errorMessage(response, 'Failed to load enforcement status'));
+    }
+
+    return EnforcementStatus.fromJson(
       jsonDecode(response.body) as Map<String, dynamic>,
     );
   }
@@ -431,6 +584,15 @@ class ApiClient {
     final headers = <String, String>{};
     if (_accessToken != null && _accessToken!.isNotEmpty) {
       headers['Authorization'] = 'Bearer $_accessToken';
+    }
+    if (_deviceId != null && _deviceId!.isNotEmpty) {
+      headers['X-WiFence-Device-Id'] = _deviceId!;
+    }
+    if (_deviceName != null && _deviceName!.isNotEmpty) {
+      headers['X-WiFence-Device-Name'] = _deviceName!;
+    }
+    if (_devicePlatform != null && _devicePlatform!.isNotEmpty) {
+      headers['X-WiFence-Device-Platform'] = _devicePlatform!;
     }
     return headers;
   }
