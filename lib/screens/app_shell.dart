@@ -8,6 +8,7 @@ import 'changelog_screen.dart';
 import 'dashboard_screen.dart';
 import 'enforcement_settings_screen.dart';
 import 'modes_screen.dart';
+import 'pulse_screen.dart';
 import 'trusted_devices_screen.dart';
 
 class WiFenceAppShell extends StatefulWidget {
@@ -36,15 +37,14 @@ class _WiFenceAppShellState extends State<WiFenceAppShell> {
   late final List<Widget> _pages = [
     DashboardScreen(apiClient: widget.apiClient),
     ModesScreen(apiClient: widget.apiClient),
-    const _FeatureStageScreen(
-      title: 'Network pulse',
-      subtitle: 'Make activity feel understandable, not like a router console.',
-      accent: WiFenceColors.mint,
-      bullets: [
-        'Today view by person',
-        'Rule hits you can explain',
-        'Quota and bedtime snapshots',
-      ],
+    PulseScreen(
+      apiClient: widget.apiClient,
+      currentTrustedDevice: widget.currentTrustedDevice,
+      onOpenModes: () {
+        setState(() {
+          _currentIndex = 1;
+        });
+      },
     ),
     _AccountStageScreen(
       currentUser: widget.currentUser,
@@ -241,93 +241,6 @@ class _FloatingNavBar extends StatelessWidget {
             ),
         ],
       ),
-    );
-  }
-}
-
-class _FeatureStageScreen extends StatelessWidget {
-  const _FeatureStageScreen({
-    required this.title,
-    required this.subtitle,
-    required this.accent,
-    required this.bullets,
-  });
-
-  final String title;
-  final String subtitle;
-  final Color accent;
-  final List<String> bullets;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
-      children: [
-        Text(
-          title,
-          style: Theme.of(context).textTheme.headlineLarge,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          subtitle,
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: WiFenceColors.muted,
-              ),
-        ),
-        const SizedBox(height: 24),
-        Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: WiFenceColors.card,
-            borderRadius: BorderRadius.circular(32),
-            border: Border.all(color: WiFenceColors.line),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: accent.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                child: Icon(Icons.auto_awesome_rounded, color: accent),
-              ),
-              const SizedBox(height: 18),
-              Text(
-                'Foundation stage',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 8),
-              ...bullets.map(
-                (bullet) => Padding(
-                  padding: const EdgeInsets.only(top: 12),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: accent,
-                          borderRadius: BorderRadius.circular(99),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          bullet,
-                          style: Theme.of(context).textTheme.bodyLarge,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 }
