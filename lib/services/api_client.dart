@@ -9,6 +9,7 @@ import '../models/device.dart';
 import '../models/gateway.dart';
 import '../models/gateway_preferences.dart';
 import '../models/modes.dart';
+import '../models/pulse.dart';
 
 class ApiClient {
   ApiClient({http.Client? client, String? baseUrl})
@@ -156,6 +157,34 @@ class ApiClient {
     }
 
     return DashboardData.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+  }
+
+  Future<PulseSnapshot> fetchPulse() async {
+    final response = await _client.get(
+      Uri.parse('$_baseUrl/pulse'),
+      headers: _headers(),
+    );
+    if (response.statusCode != 200) {
+      throw Exception(_errorMessage(response, 'Failed to load pulse'));
+    }
+
+    return PulseSnapshot.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+  }
+
+  Future<SpeedTestSnapshot> runPulseSpeedTest() async {
+    final response = await _client.post(
+      Uri.parse('$_baseUrl/pulse/speed-test'),
+      headers: _headers(),
+    );
+    if (response.statusCode != 200) {
+      throw Exception(_errorMessage(response, 'Failed to run speed check'));
+    }
+
+    return SpeedTestSnapshot.fromJson(
       jsonDecode(response.body) as Map<String, dynamic>,
     );
   }

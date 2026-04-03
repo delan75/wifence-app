@@ -20,6 +20,7 @@ Current screens and flows in the codebase:
 - pairing by one-time code
 - pairing by QR code scan
 - dashboard
+- pulse
 - device detail
 - grouped controls through the Modes screen
 - enforcement settings
@@ -57,6 +58,28 @@ It currently shows:
 
 Operational warnings on the dashboard are meant to come from real gateway data, not placeholder copy.
 Brand labels and section titles are still static UI text by design.
+
+### Pulse
+
+The Pulse tab is now the network-status surface.
+
+It currently shows:
+
+- overall gateway state
+- quick line-check probe replies
+- gateway-run speed test
+- phone-side speed test
+- enforcement posture
+- resolver lock and encrypted-DNS posture
+- impacted devices
+- recent gateway changes
+
+From Pulse, the app can lead a person into:
+
+- device detail
+- enforcement settings
+- audit history
+- grouped routines
 
 ### Device Detail
 

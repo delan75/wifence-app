@@ -28,6 +28,51 @@ class ChangelogScreen extends StatelessWidget {
               ),
               SizedBox(height: 14),
               _VersionCard(
+                version: '0.7.x',
+                tag: 'Pulse and validation',
+                accent: WiFenceColors.sky,
+                title: 'Network pulse, line checks, and dual speed testing',
+                summary:
+                    'Pulse is now a real network-status surface. It shows gateway state, resolver posture, quick line checks, affected devices, recent gateway changes, and two kinds of speed checks: one from the gateway path and one from the phone itself.',
+                bullets: [
+                  'Pulse now reads from a real /pulse payload instead of a placeholder screen.',
+                  'The screen now shows gateway readiness, enforcement mode, resolver-lock posture, and affected devices.',
+                  'The gateway now exposes a speed-test snapshot and a route to run a fresh gateway speed check.',
+                  'The app now also supports a phone-side speed check so people can compare what the phone sees versus what the gateway sees.',
+                ],
+              ),
+              SizedBox(height: 14),
+              _VersionCard(
+                version: '0.7.x',
+                tag: 'Gateway deploy path',
+                accent: WiFenceColors.deepSea,
+                title: 'Linux deployment layer for Ubuntu and Debian targets',
+                summary:
+                    'WiFence now has a real gateway deployment layout instead of just source code. The repo includes a systemd unit, install script, gateway env template, dnsmasq base template, and a Linux setup guide for moving the gateway onto supported hardware.',
+                bullets: [
+                  'The gateway repo now includes an install script for Ubuntu and Debian hosts.',
+                  'A systemd unit now defines the expected long-running gateway service shape.',
+                  'The Linux env template now documents dnsmasq, nftables, probe, and speed-test config values.',
+                  'The deployment docs now describe the intended Linux file layout and the order for turning on live enforcement safely.',
+                ],
+              ),
+              SizedBox(height: 14),
+              _VersionCard(
+                version: '0.7.x',
+                tag: 'Runtime operations',
+                accent: WiFenceColors.cobalt,
+                title: 'Usage rollup, inventory reset, and live-state cleanup',
+                summary:
+                    'WiFence moved further away from demo behavior and closer to an operational gateway. Daily usage is now rolled in the runtime worker, old inventory can be cleared without wiping auth, and the dashboard plus pulse surfaces are driven by live gateway state.',
+                bullets: [
+                  'The runtime worker now rolls minutes used today and respects pause, schedule, and quota states.',
+                  'Owners can now reset inventory and rescan the network without deleting users, trusted devices, or the audit log.',
+                  'Dashboard actions and warning states are now derived from actual gateway conditions instead of static placeholders.',
+                  'Pulse and dashboard now work off gateway-backed operational state instead of hardcoded sample messaging.',
+                ],
+              ),
+              SizedBox(height: 14),
+              _VersionCard(
                 version: '0.7.0',
                 tag: 'Security operations',
                 accent: WiFenceColors.mint,
@@ -281,7 +326,7 @@ class _ProgressStrip extends StatelessWidget {
       children: const [
         Expanded(
           child: _StatTile(
-            value: '9',
+            value: '12',
             label: 'Core phases shipped',
             accent: WiFenceColors.sky,
           ),
@@ -289,7 +334,7 @@ class _ProgressStrip extends StatelessWidget {
         SizedBox(width: 12),
         Expanded(
           child: _StatTile(
-            value: '14+',
+            value: '45',
             label: 'Live local API routes',
             accent: WiFenceColors.mint,
           ),
@@ -508,8 +553,20 @@ class _CapabilityGrid extends StatelessWidget {
         description: 'Per-device daily limits plus reusable bedtime and study-style schedules.',
       ),
       (
+        title: 'Runtime accounting',
+        description: 'The gateway now rolls daily minutes used today and keeps policy state in sync as device time accrues.',
+      ),
+      (
         title: 'Category rules',
         description: 'Live category metadata from the gateway with category block creation in-device.',
+      ),
+      (
+        title: 'Pulse screen',
+        description: 'Pulse now shows gateway readiness, enforcement posture, affected devices, recent gateway changes, and line checks.',
+      ),
+      (
+        title: 'Speed checks',
+        description: 'Pulse now includes a gateway-run speed check plus a phone-side speed test so both paths can be compared.',
       ),
       (
         title: 'Resolver lock',
@@ -522,6 +579,10 @@ class _CapabilityGrid extends StatelessWidget {
       (
         title: 'Encrypted DNS hardening',
         description: 'Known DoH and resolver targets can be blocked by provider set, browser canary, and configurable app-specific domains or IPs.',
+      ),
+      (
+        title: 'Linux deployment',
+        description: 'The gateway repo now includes a Linux install script, systemd service, env template, dnsmasq base template, and Ubuntu/Debian setup guide.',
       ),
       (
         title: 'Admin controls',
@@ -595,8 +656,9 @@ class _NextUpCard extends StatelessWidget {
   Widget build(BuildContext context) {
     const nextItems = [
       'Cleaner first-network onboarding with gateway discovery, setup guidance, and success verification.',
-      'True network pulse views for speed, status, and internet health.',
+      'Real Linux gateway validation on supported hardware so pause, group pause, and resolver lock can be confirmed beyond dry-run development.',
       'Richer analytics around schedule hits, daily summaries, and household trends.',
+      'A stronger gateway speed-test setup with stable production endpoints instead of only the current configurable test-target approach.',
       'Harder bypass coverage for VPN tunnels, custom in-app proxies, and encrypted traffic that hides behind non-standard endpoints.',
     ];
 
