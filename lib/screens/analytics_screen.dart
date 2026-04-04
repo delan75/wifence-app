@@ -507,8 +507,8 @@ class _WeekdayTrendCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final totalPressure =
         trend.scheduleHitCount + trend.manualPauseCount + trend.quotaHitCount;
-    final usageRatio = math.min(1, trend.usageMinutes / 600);
-    final pressureRatio = math.min(1, totalPressure / 8);
+    final usageRatio = math.min<double>(1, trend.usageMinutes / 600);
+    final pressureRatio = math.min<double>(1, totalPressure / 8);
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -844,7 +844,7 @@ class _InfoPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: WiFenceColors.surface,
+          color: WiFenceColors.canvas,
         borderRadius: BorderRadius.circular(16),
       ),
       child: RichText(
