@@ -54,18 +54,21 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: SafeArea(
-        child: FutureBuilder<HouseholdAnalyticsSnapshot>(
-          future: _future,
-          builder: (context, snapshot) {
-            return RefreshIndicator(
-              color: WiFenceColors.cobalt,
-              onRefresh: _refresh,
-              child: ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
-                children: [
+      backgroundColor: WiFenceColors.canvas,
+      body: Stack(
+        children: [
+          const _AnalyticsBackground(),
+          SafeArea(
+            child: FutureBuilder<HouseholdAnalyticsSnapshot>(
+              future: _future,
+              builder: (context, snapshot) {
+                return RefreshIndicator(
+                  color: WiFenceColors.cobalt,
+                  onRefresh: _refresh,
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+                    children: [
                   Row(
                     children: [
                       IconButton(
@@ -134,33 +137,35 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                     ],
                   ),
                   const SizedBox(height: 24),
-                  if (snapshot.connectionState == ConnectionState.waiting)
-                    const _AnalyticsLoadingState()
-                  else if (snapshot.hasError)
-                    _AnalyticsErrorState(
-                      message: snapshot.error.toString(),
-                      onRetry: _refresh,
-                    )
-                  else if (snapshot.hasData)
-                    _AnalyticsLoadedState(
-                      analytics: snapshot.data!,
-                      onOpenDevice: (deviceId) async {
-                        await Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => DeviceDetailScreen(
-                              deviceId: deviceId,
-                              apiClient: widget.apiClient,
-                            ),
-                          ),
-                        );
-                        await _refresh();
-                      },
-                    ),
-                ],
-              ),
-            );
-          },
-        ),
+                      if (snapshot.connectionState == ConnectionState.waiting)
+                        const _AnalyticsLoadingState()
+                      else if (snapshot.hasError)
+                        _AnalyticsErrorState(
+                          message: snapshot.error.toString(),
+                          onRetry: _refresh,
+                        )
+                      else if (snapshot.hasData)
+                        _AnalyticsLoadedState(
+                          analytics: snapshot.data!,
+                          onOpenDevice: (deviceId) async {
+                            await Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) => DeviceDetailScreen(
+                                  deviceId: deviceId,
+                                  apiClient: widget.apiClient,
+                                ),
+                              ),
+                            );
+                            await _refresh();
+                          },
+                        ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -190,17 +195,14 @@ class _AnalyticsLoadedState extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
+            color: WiFenceColors.card,
             borderRadius: BorderRadius.circular(32),
-            gradient: const LinearGradient(
-              colors: [WiFenceColors.deepSea, Color(0xFF153C64), WiFenceColors.cobalt],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+            border: Border.all(color: WiFenceColors.line),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.10),
-                blurRadius: 36,
-                offset: const Offset(0, 22),
+                color: Colors.black.withValues(alpha: 0.06),
+                blurRadius: 24,
+                offset: const Offset(0, 14),
               ),
             ],
           ),
@@ -210,7 +212,7 @@ class _AnalyticsLoadedState extends StatelessWidget {
               Text(
                 'Today so far',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.white70,
+                      color: WiFenceColors.muted,
                       letterSpacing: 0.8,
                     ),
               ),
@@ -218,7 +220,7 @@ class _AnalyticsLoadedState extends StatelessWidget {
               Text(
                 '${_formatMinutes(today.usageMinutes)} online across ${today.activeDeviceCount} active devices.',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: Colors.white,
+                      color: WiFenceColors.ink,
                       height: 1.15,
                     ),
               ),
@@ -226,7 +228,7 @@ class _AnalyticsLoadedState extends StatelessWidget {
               Text(
                 'Peak day in this range: ${peakDay.weekdayLabel} with ${_formatMinutes(peakDay.usageMinutes)}. ${busiestProfile == null ? 'No profile trend yet.' : '${busiestProfile.profileName} is carrying the heaviest routine load.'}',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.76),
+                      color: WiFenceColors.muted,
                     ),
               ),
               const SizedBox(height: 20),
@@ -325,6 +327,54 @@ class _AnalyticsLoadedState extends StatelessWidget {
   }
 }
 
+class _AnalyticsBackground extends StatelessWidget {
+  const _AnalyticsBackground();
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        Positioned(
+          top: -90,
+          right: -24,
+          child: Container(
+            width: 190,
+            height: 190,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: WiFenceColors.sky.withValues(alpha: 0.16),
+            ),
+          ),
+        ),
+        Positioned(
+          top: 220,
+          left: -70,
+          child: Container(
+            width: 150,
+            height: 150,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: WiFenceColors.coral.withValues(alpha: 0.08),
+            ),
+          ),
+        ),
+        Positioned(
+          bottom: 120,
+          right: -50,
+          child: Container(
+            width: 170,
+            height: 170,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: WiFenceColors.mint.withValues(alpha: 0.08),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _RangeChip extends StatelessWidget {
   const _RangeChip({
     required this.label,
@@ -378,7 +428,7 @@ class _HeroMetric extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.08),
+        color: accent.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(22),
       ),
       child: Column(
@@ -396,14 +446,14 @@ class _HeroMetric extends StatelessWidget {
           Text(
             value,
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: Colors.white,
+                  color: WiFenceColors.ink,
                 ),
           ),
           const SizedBox(height: 4),
           Text(
             label,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.white70,
+                  color: WiFenceColors.muted,
                 ),
           ),
         ],
