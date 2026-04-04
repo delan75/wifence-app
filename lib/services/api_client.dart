@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../models/analytics.dart';
 import '../models/auth.dart';
 import '../models/category.dart';
 import '../models/dashboard.dart';
@@ -157,6 +158,22 @@ class ApiClient {
     }
 
     return DashboardData.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+  }
+
+  Future<HouseholdAnalyticsSnapshot> fetchHouseholdAnalytics({
+    int days = 14,
+  }) async {
+    final response = await _client.get(
+      Uri.parse('$_baseUrl/analytics/household?days=$days'),
+      headers: _headers(),
+    );
+    if (response.statusCode != 200) {
+      throw Exception(_errorMessage(response, 'Failed to load analytics'));
+    }
+
+    return HouseholdAnalyticsSnapshot.fromJson(
       jsonDecode(response.body) as Map<String, dynamic>,
     );
   }
