@@ -21,6 +21,7 @@ Current screens and flows in the codebase:
 - pairing by QR code scan
 - dashboard
 - pulse
+- household analytics
 - device detail
 - grouped controls through the Modes screen
 - enforcement settings
@@ -77,9 +78,27 @@ It currently shows:
 From Pulse, the app can lead a person into:
 
 - device detail
+- household analytics
 - enforcement settings
 - audit history
 - grouped routines
+
+### Household Analytics
+
+The analytics screen is now the history and trend surface for WiFence.
+
+It currently shows:
+
+- daily summaries over 7, 14, or 30 days
+- usage-minute trends
+- schedule-hit trends
+- pause and quota pressure
+- weekday rhythm summaries
+- profile trend cards
+- device trend cards
+
+This data is gateway-backed.
+It comes from stored daily analytics on the local gateway, not from placeholder app-side calculations.
 
 ### Device Detail
 
@@ -105,6 +124,7 @@ It currently supports:
 
 The More area currently includes:
 
+- household analytics
 - trusted-device management
 - enforcement settings
 - audit log
