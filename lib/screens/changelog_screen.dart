@@ -28,6 +28,21 @@ class ChangelogScreen extends StatelessWidget {
               ),
               SizedBox(height: 14),
               _VersionCard(
+                version: '0.8.0',
+                tag: 'Household analytics',
+                accent: WiFenceColors.mint,
+                title: 'Daily summaries, schedule-hit trends, and device pressure views',
+                summary:
+                    'WiFence now has a dedicated analytics screen for the household patterns that sit behind routines and limits. The gateway stores daily device analytics, rolls household summaries, and the app turns that into readable trend views instead of raw counters.',
+                bullets: [
+                  'The gateway now stores daily analytics rows per device and household rollups for trend queries.',
+                  'Schedule-hit transitions, quota-hit transitions, usage minutes, and manual pause actions now feed the analytics layer.',
+                  'The app now has a dedicated analytics screen with 7-, 14-, and 30-day views.',
+                  'Analytics can now be opened from Pulse and the More tab for deeper household visibility.',
+                ],
+              ),
+              SizedBox(height: 14),
+              _VersionCard(
                 version: '0.7.x',
                 tag: 'Pulse and validation',
                 accent: WiFenceColors.sky,
@@ -326,7 +341,7 @@ class _ProgressStrip extends StatelessWidget {
       children: const [
         Expanded(
           child: _StatTile(
-            value: '12',
+            value: '13',
             label: 'Core phases shipped',
             accent: WiFenceColors.sky,
           ),
@@ -334,7 +349,7 @@ class _ProgressStrip extends StatelessWidget {
         SizedBox(width: 12),
         Expanded(
           child: _StatTile(
-            value: '45',
+            value: '46',
             label: 'Live local API routes',
             accent: WiFenceColors.mint,
           ),
@@ -533,6 +548,10 @@ class _CapabilityGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     const items = [
       (
+        title: 'Household analytics',
+        description: 'WiFence now tracks daily usage, schedule hits, quota hits, and pause actions, then turns that into trend views on the phone.',
+      ),
+      (
         title: 'Mobile shell',
         description: 'Custom WiFence brand system, dashboard, modes, account, and detailed device control.',
       ),
@@ -657,7 +676,6 @@ class _NextUpCard extends StatelessWidget {
     const nextItems = [
       'Cleaner first-network onboarding with gateway discovery, setup guidance, and success verification.',
       'Real Linux gateway validation on supported hardware so pause, group pause, and resolver lock can be confirmed beyond dry-run development.',
-      'Richer analytics around schedule hits, daily summaries, and household trends.',
       'A stronger gateway speed-test setup with stable production endpoints instead of only the current configurable test-target approach.',
       'Harder bypass coverage for VPN tunnels, custom in-app proxies, and encrypted traffic that hides behind non-standard endpoints.',
     ];
@@ -678,7 +696,7 @@ class _NextUpCard extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            'WiFence already feels like a real control surface. The next leap is stronger enforcement and richer household visibility.',
+            'WiFence already feels like a real control surface. The next leap is stronger onboarding, stronger enforcement validation, and harder network-bypass coverage.',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: WiFenceColors.ink,
                 ),

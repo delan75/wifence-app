@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/auth.dart';
 import '../services/api_client.dart';
 import '../theme/wifence_theme.dart';
+import 'analytics_screen.dart';
 import 'audit_log_screen.dart';
 import 'changelog_screen.dart';
 import 'dashboard_screen.dart';
@@ -78,6 +79,13 @@ class _WiFenceAppShellState extends State<WiFenceAppShell> {
         Navigator.of(context).push(
           MaterialPageRoute<void>(
             builder: (_) => AuditLogScreen(apiClient: widget.apiClient),
+          ),
+        );
+      },
+      onOpenAnalytics: () {
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => AnalyticsScreen(apiClient: widget.apiClient),
           ),
         );
       },
@@ -254,6 +262,7 @@ class _AccountStageScreen extends StatelessWidget {
     required this.onOpenTrustedDevices,
     required this.onOpenChangelog,
     required this.onOpenAuditLog,
+    required this.onOpenAnalytics,
   });
 
   final AuthUser currentUser;
@@ -263,6 +272,7 @@ class _AccountStageScreen extends StatelessWidget {
   final VoidCallback onOpenTrustedDevices;
   final VoidCallback onOpenChangelog;
   final VoidCallback onOpenAuditLog;
+  final VoidCallback onOpenAnalytics;
 
   @override
   Widget build(BuildContext context) {
@@ -280,6 +290,23 @@ class _AccountStageScreen extends StatelessWidget {
                 style: Theme.of(context).textTheme.headlineLarge,
               ),
             ),
+            if (canViewAudit)
+              IconButton(
+                onPressed: onOpenAnalytics,
+                icon: Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: WiFenceColors.card,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: WiFenceColors.line),
+                  ),
+                  child: const Icon(
+                    Icons.query_stats_rounded,
+                    color: WiFenceColors.deepSea,
+                  ),
+                ),
+              ),
             if (canViewAudit)
               IconButton(
                 onPressed: onOpenAuditLog,

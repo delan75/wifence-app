@@ -6,6 +6,7 @@ import '../models/pulse.dart';
 import '../services/api_client.dart';
 import '../services/phone_speed_test_service.dart';
 import '../theme/wifence_theme.dart';
+import 'analytics_screen.dart';
 import 'audit_log_screen.dart';
 import 'device_detail_screen.dart';
 import 'enforcement_settings_screen.dart';
@@ -179,6 +180,29 @@ class _PulseScreenState extends State<PulseScreen> {
                               ),
                         ),
                       ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => AnalyticsScreen(apiClient: widget.apiClient),
+                        ),
+                      );
+                    },
+                    icon: Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: WiFenceColors.card,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: WiFenceColors.line),
+                      ),
+                      child: const Icon(
+                        Icons.query_stats_rounded,
+                        color: WiFenceColors.deepSea,
+                      ),
                     ),
                   ),
                   IconButton(
