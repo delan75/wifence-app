@@ -75,7 +75,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       }
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Network scan failed. Check that the local gateway is running.'),
+          content: Text('Network scan failed. Check that the gateway is running. and accessible'),
         ),
       );
     } finally {
