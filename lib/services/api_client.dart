@@ -12,10 +12,15 @@ import '../models/gateway_preferences.dart';
 import '../models/modes.dart';
 import '../models/pulse.dart';
 
+const String _defaultGatewayBaseUrl = String.fromEnvironment(
+  'WIFENCE_API_BASE_URL',
+  defaultValue: 'https://wifence-gateway.onrender.com',
+);
+
 class ApiClient {
   ApiClient({http.Client? client, String? baseUrl})
       : _client = client ?? http.Client(),
-        _baseUrl = baseUrl ?? 'http://10.0.2.2:8000';
+        _baseUrl = _normalizeBaseUrl(baseUrl ?? _defaultGatewayBaseUrl);
 
   final http.Client _client;
   final String _baseUrl;
@@ -661,5 +666,13 @@ class ApiClient {
       // Ignore parse errors and fall back to the provided message.
     }
     return fallback;
+  }
+
+  static String _normalizeBaseUrl(String value) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) {
+      return _defaultGatewayBaseUrl;
+    }
+    return trimmed.endsWith('/') ? trimmed.substring(0, trimmed.length - 1) : trimmed;
   }
 }
