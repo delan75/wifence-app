@@ -28,6 +28,21 @@ class ChangelogScreen extends StatelessWidget {
               ),
               SizedBox(height: 14),
               _VersionCard(
+                version: '0.8.1',
+                tag: 'Guided onboarding',
+                accent: WiFenceColors.cobalt,
+                title: 'Setup wizard for discovery, naming, pause checks, and block checks',
+                summary:
+                    'WiFence now has a real first-run wizard instead of stopping at login and pairing. It can scan the network, help name devices, run a pause check, run a blocked-domain check, and clean up its temporary test rules afterward.',
+                bullets: [
+                  'The app now has a guided setup wizard that can be reopened from the account area.',
+                  'Parents can name devices and choose a real test device from the wizard instead of jumping between screens.',
+                  'The wizard now walks through a pause verification flow and a temporary category-block verification flow.',
+                  'The gateway now exposes onboarding summary data and a category-rule cleanup route so the first-run test leaves the network clean.',
+                ],
+              ),
+              SizedBox(height: 14),
+              _VersionCard(
                 version: '0.8.0',
                 tag: 'Household analytics',
                 accent: WiFenceColors.mint,
@@ -341,7 +356,7 @@ class _ProgressStrip extends StatelessWidget {
       children: const [
         Expanded(
           child: _StatTile(
-            value: '13',
+            value: '14',
             label: 'Core phases shipped',
             accent: WiFenceColors.sky,
           ),
@@ -349,7 +364,7 @@ class _ProgressStrip extends StatelessWidget {
         SizedBox(width: 12),
         Expanded(
           child: _StatTile(
-            value: '46',
+            value: '47',
             label: 'Live local API routes',
             accent: WiFenceColors.mint,
           ),
@@ -548,6 +563,10 @@ class _CapabilityGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     const items = [
       (
+        title: 'Setup wizard',
+        description: 'The app now guides first-run discovery, device naming, pause verification, and blocked-domain verification with cleanup of temporary test rules.',
+      ),
+      (
         title: 'Household analytics',
         description: 'WiFence now tracks daily usage, schedule hits, quota hits, and pause actions, then turns that into trend views on the phone.',
       ),
@@ -674,7 +693,6 @@ class _NextUpCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const nextItems = [
-      'Cleaner first-network onboarding with gateway discovery, setup guidance, and success verification.',
       'Real Linux gateway validation on supported hardware so pause, group pause, and resolver lock can be confirmed beyond dry-run development.',
       'A stronger gateway speed-test setup with stable production endpoints instead of only the current configurable test-target approach.',
       'Harder bypass coverage for VPN tunnels, custom in-app proxies, and encrypted traffic that hides behind non-standard endpoints.',
@@ -696,7 +714,7 @@ class _NextUpCard extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            'WiFence already feels like a real control surface. The next leap is stronger onboarding, stronger enforcement validation, and harder network-bypass coverage.',
+            'WiFence already feels like a real control surface. The next leap is stronger enforcement validation, steadier speed-test infrastructure, and harder network-bypass coverage.',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: WiFenceColors.ink,
                 ),
