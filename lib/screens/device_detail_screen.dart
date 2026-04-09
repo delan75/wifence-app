@@ -196,6 +196,133 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
     await _reload();
   }
 
+  Future<void> _editAllowlist(Device device) async {
+    final existingPolicy = _allowlistPolicy(device);
+    final nameController = TextEditingController(
+      text: existingPolicy?.name == 'Homework allowlist' ? '' : existingPolicy?.name ?? '',
+    );
+    final domainsController = TextEditingController(
+      text: (existingPolicy?.domainList ?? const []).join('\n'),
+    );
+    var selectedMode = existingPolicy?.modeKey ?? 'study';
+
+    final result = await showDialog<_AllowlistDraft>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Homework allowlist'),
+          content: SizedBox(
+            width: 420,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    controller: nameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Label',
+                      hintText: 'Homework allowlist',
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  DropdownButtonFormField<String>(
+                    value: selectedMode,
+                    decoration: const InputDecoration(
+                      labelText: 'When it should apply',
+                    ),
+                    items: const [
+                      DropdownMenuItem(
+                        value: 'study',
+                        child: Text('Only during Study mode'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'always',
+                        child: Text('Always on for this device'),
+                      ),
+                    ],
+                    onChanged: (value) {
+                      if (value == null) return;
+                      setDialogState(() {
+                        selectedMode = value;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 14),
+                  TextField(
+                    controller: domainsController,
+                    minLines: 6,
+                    maxLines: 10,
+                    decoration: const InputDecoration(
+                      labelText: 'Approved domains',
+                      hintText: 'school.example.com\nclassroom.google.com',
+                      alignLabelWithHint: true,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Only the listed sites stay reachable while this rule is active. Enter one domain per line.',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            if (existingPolicy != null)
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(
+                  const _AllowlistDraft(clear: true, domains: []),
+                ),
+                child: const Text('Clear'),
+              ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(
+                _AllowlistDraft(
+                  clear: false,
+                  name: nameController.text.trim(),
+                  domains: domainsController.text
+                      .split(RegExp(r'[\n,]'))
+                      .map((item) => item.trim())
+                      .where((item) => item.isNotEmpty)
+                      .toList(),
+                  modeKey: selectedMode == 'always' ? null : selectedMode,
+                ),
+              ),
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (result == null) {
+      return;
+    }
+
+    if (result.clear) {
+      await widget.apiClient.clearAllowlist(device.id);
+      await _reload();
+      return;
+    }
+
+    if (result.domains.isEmpty) {
+      return;
+    }
+
+    await widget.apiClient.updateAllowlist(
+      deviceId: device.id,
+      name: result.name.isEmpty ? null : result.name,
+      domains: result.domains,
+      modeKey: result.modeKey,
+    );
+    await _reload();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -265,23 +392,34 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
                 ),
                 child: const Text('Move to group'),
               ),
+              const SizedBox(height: 12),
+              OutlinedButton(
+                onPressed: () => _editAllowlist(device),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+                child: const Text('Homework allowlist'),
+              ),
               const SizedBox(height: 24),
               Text(
                 'Today at a glance',
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 12),
-              Row(
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
                 children: [
-                  Expanded(
+                  SizedBox(
+                    width: 160,
                     child: _MetricTile(
                       label: 'Used',
                       value: '${device.minutesUsedToday} min',
                       accent: WiFenceColors.cobalt,
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
+                  SizedBox(
+                    width: 160,
                     child: _MetricTile(
                       label: 'Limit',
                       value: device.dailyLimitMinutes == null
@@ -290,8 +428,32 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
                       accent: WiFenceColors.coral,
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
+                  SizedBox(
+                    width: 160,
+                    child: _MetricTile(
+                      label: 'Download',
+                      value: _formatBytes(device.bytesInToday),
+                      accent: WiFenceColors.sky,
+                    ),
+                  ),
+                  SizedBox(
+                    width: 160,
+                    child: _MetricTile(
+                      label: 'Upload',
+                      value: _formatBytes(device.bytesOutToday),
+                      accent: WiFenceColors.mint,
+                    ),
+                  ),
+                  SizedBox(
+                    width: 160,
+                    child: _MetricTile(
+                      label: 'Blocked',
+                      value: '${device.blockedDnsEventsToday}',
+                      accent: WiFenceColors.coral,
+                    ),
+                  ),
+                  SizedBox(
+                    width: 160,
                     child: _MetricTile(
                       label: 'Trust',
                       value: '${device.identityConfidence}%',
@@ -301,6 +463,9 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
                 ],
               ),
               const SizedBox(height: 24),
+              if (_allowlistPolicy(device) case final allowlist?)
+                _AllowlistCard(policy: allowlist),
+              if (_allowlistPolicy(device) != null) const SizedBox(height: 24),
               Text(
                 'Active rules',
                 style: Theme.of(context).textTheme.titleLarge,
@@ -312,10 +477,7 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
                 children: device.policies
                     .map(
                       (policy) => _RulePill(
-                        label: policy.categoryKey?.replaceAll('_', ' ') ??
-                            (policy.dailyMinutes == null
-                                ? policy.name
-                                : '${policy.dailyMinutes} min per day'),
+                        label: _policyLabel(policy),
                       ),
                     )
                     .toList(),
@@ -346,6 +508,56 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
     }
     return (device.minutesUsedToday / device.dailyLimitMinutes!).clamp(0.0, 1.0);
   }
+
+  Policy? _allowlistPolicy(Device device) {
+    for (final policy in device.policies) {
+      if (policy.policyType == 'domain_allowlist' && policy.enabled) {
+        return policy;
+      }
+    }
+    return null;
+  }
+
+  String _policyLabel(Policy policy) {
+    if (policy.policyType == 'domain_allowlist') {
+      final scope = policy.modeKey == null ? 'always on' : '${policy.modeKey} only';
+      return '${policy.name} • ${policy.domainList.length} domains • $scope';
+    }
+    if (policy.categoryKey != null) {
+      return policy.categoryKey!.replaceAll('_', ' ');
+    }
+    if (policy.dailyMinutes != null) {
+      return '${policy.dailyMinutes} min per day';
+    }
+    return policy.name;
+  }
+
+  String _formatBytes(int value) {
+    if (value >= 1024 * 1024 * 1024) {
+      return '${(value / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
+    }
+    if (value >= 1024 * 1024) {
+      return '${(value / (1024 * 1024)).toStringAsFixed(1)} MB';
+    }
+    if (value >= 1024) {
+      return '${(value / 1024).toStringAsFixed(1)} KB';
+    }
+    return '$value B';
+  }
+}
+
+class _AllowlistDraft {
+  const _AllowlistDraft({
+    required this.clear,
+    required this.domains,
+    this.name = '',
+    this.modeKey,
+  });
+
+  final bool clear;
+  final String name;
+  final List<String> domains;
+  final String? modeKey;
 }
 
 class _DeviceHero extends StatelessWidget {
@@ -529,6 +741,69 @@ class _MetricTile extends StatelessWidget {
           Text(
             label,
             style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AllowlistCard extends StatelessWidget {
+  const _AllowlistCard({required this.policy});
+
+  final Policy policy;
+
+  @override
+  Widget build(BuildContext context) {
+    final modeLabel = policy.modeKey == null ? 'Always active' : 'Only during ${policy.modeKey}';
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF4FBF7),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFD2EBDD)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: WiFenceColors.mint.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(Icons.menu_book_rounded, color: WiFenceColors.mint),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      policy.name,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      modeLabel,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: policy.domainList
+                .map((domain) => _RulePill(label: domain))
+                .toList(),
           ),
         ],
       ),
