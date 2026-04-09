@@ -10,6 +10,7 @@ import '../models/device.dart';
 import '../models/gateway.dart';
 import '../models/gateway_preferences.dart';
 import '../models/modes.dart';
+import '../models/onboarding.dart';
 import '../models/pulse.dart';
 
 const String _defaultGatewayBaseUrl = String.fromEnvironment(
@@ -163,6 +164,20 @@ class ApiClient {
     }
 
     return DashboardData.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+  }
+
+  Future<OnboardingSummary> fetchOnboardingSummary() async {
+    final response = await _client.get(
+      Uri.parse('$_baseUrl/onboarding/summary'),
+      headers: _headers(),
+    );
+    if (response.statusCode != 200) {
+      throw Exception(_errorMessage(response, 'Failed to load setup wizard state'));
+    }
+
+    return OnboardingSummary.fromJson(
       jsonDecode(response.body) as Map<String, dynamic>,
     );
   }
