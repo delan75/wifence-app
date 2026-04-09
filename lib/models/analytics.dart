@@ -3,6 +3,9 @@ class AnalyticsDaySummary {
     required this.dateKey,
     required this.weekdayLabel,
     required this.usageMinutes,
+    required this.bytesIn,
+    required this.bytesOut,
+    required this.blockedDnsEventCount,
     required this.deviceCount,
     required this.activeDeviceCount,
     required this.profileCount,
@@ -14,6 +17,9 @@ class AnalyticsDaySummary {
   final String dateKey;
   final String weekdayLabel;
   final int usageMinutes;
+  final int bytesIn;
+  final int bytesOut;
+  final int blockedDnsEventCount;
   final int deviceCount;
   final int activeDeviceCount;
   final int profileCount;
@@ -26,6 +32,9 @@ class AnalyticsDaySummary {
       dateKey: json['date_key'] as String,
       weekdayLabel: json['weekday_label'] as String,
       usageMinutes: json['usage_minutes'] as int? ?? 0,
+      bytesIn: json['bytes_in'] as int? ?? 0,
+      bytesOut: json['bytes_out'] as int? ?? 0,
+      blockedDnsEventCount: json['blocked_dns_event_count'] as int? ?? 0,
       deviceCount: json['device_count'] as int? ?? 0,
       activeDeviceCount: json['active_device_count'] as int? ?? 0,
       profileCount: json['profile_count'] as int? ?? 0,
@@ -43,6 +52,9 @@ class AnalyticsProfileTrend {
     required this.deviceCount,
     required this.activeDays,
     required this.usageMinutes,
+    required this.bytesIn,
+    required this.bytesOut,
+    required this.blockedDnsEventCount,
     required this.averageUsageMinutes,
     required this.scheduleHitCount,
     required this.quotaHitCount,
@@ -54,6 +66,9 @@ class AnalyticsProfileTrend {
   final int deviceCount;
   final int activeDays;
   final int usageMinutes;
+  final int bytesIn;
+  final int bytesOut;
+  final int blockedDnsEventCount;
   final int averageUsageMinutes;
   final int scheduleHitCount;
   final int quotaHitCount;
@@ -66,6 +81,9 @@ class AnalyticsProfileTrend {
       deviceCount: json['device_count'] as int? ?? 0,
       activeDays: json['active_days'] as int? ?? 0,
       usageMinutes: json['usage_minutes'] as int? ?? 0,
+      bytesIn: json['bytes_in'] as int? ?? 0,
+      bytesOut: json['bytes_out'] as int? ?? 0,
+      blockedDnsEventCount: json['blocked_dns_event_count'] as int? ?? 0,
       averageUsageMinutes: json['average_usage_minutes'] as int? ?? 0,
       scheduleHitCount: json['schedule_hit_count'] as int? ?? 0,
       quotaHitCount: json['quota_hit_count'] as int? ?? 0,
@@ -83,6 +101,9 @@ class AnalyticsDeviceTrend {
     required this.dailyLimitMinutes,
     required this.activeDays,
     required this.usageMinutes,
+    required this.bytesIn,
+    required this.bytesOut,
+    required this.blockedDnsEventCount,
     required this.averageUsageMinutes,
     required this.scheduleHitCount,
     required this.quotaHitCount,
@@ -96,6 +117,9 @@ class AnalyticsDeviceTrend {
   final int? dailyLimitMinutes;
   final int activeDays;
   final int usageMinutes;
+  final int bytesIn;
+  final int bytesOut;
+  final int blockedDnsEventCount;
   final int averageUsageMinutes;
   final int scheduleHitCount;
   final int quotaHitCount;
@@ -110,6 +134,9 @@ class AnalyticsDeviceTrend {
       dailyLimitMinutes: json['daily_limit_minutes'] as int?,
       activeDays: json['active_days'] as int? ?? 0,
       usageMinutes: json['usage_minutes'] as int? ?? 0,
+      bytesIn: json['bytes_in'] as int? ?? 0,
+      bytesOut: json['bytes_out'] as int? ?? 0,
+      blockedDnsEventCount: json['blocked_dns_event_count'] as int? ?? 0,
       averageUsageMinutes: json['average_usage_minutes'] as int? ?? 0,
       scheduleHitCount: json['schedule_hit_count'] as int? ?? 0,
       quotaHitCount: json['quota_hit_count'] as int? ?? 0,
@@ -123,6 +150,9 @@ class AnalyticsWeekdayTrend {
     required this.weekdayIndex,
     required this.weekdayLabel,
     required this.usageMinutes,
+    required this.bytesIn,
+    required this.bytesOut,
+    required this.blockedDnsEventCount,
     required this.scheduleHitCount,
     required this.quotaHitCount,
     required this.manualPauseCount,
@@ -131,6 +161,9 @@ class AnalyticsWeekdayTrend {
   final int weekdayIndex;
   final String weekdayLabel;
   final int usageMinutes;
+  final int bytesIn;
+  final int bytesOut;
+  final int blockedDnsEventCount;
   final int scheduleHitCount;
   final int quotaHitCount;
   final int manualPauseCount;
@@ -140,6 +173,9 @@ class AnalyticsWeekdayTrend {
       weekdayIndex: json['weekday_index'] as int? ?? 0,
       weekdayLabel: json['weekday_label'] as String,
       usageMinutes: json['usage_minutes'] as int? ?? 0,
+      bytesIn: json['bytes_in'] as int? ?? 0,
+      bytesOut: json['bytes_out'] as int? ?? 0,
+      blockedDnsEventCount: json['blocked_dns_event_count'] as int? ?? 0,
       scheduleHitCount: json['schedule_hit_count'] as int? ?? 0,
       quotaHitCount: json['quota_hit_count'] as int? ?? 0,
       manualPauseCount: json['manual_pause_count'] as int? ?? 0,
