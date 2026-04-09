@@ -10,6 +10,7 @@ import '../models/device.dart';
 import '../models/gateway.dart';
 import '../models/gateway_preferences.dart';
 import '../models/modes.dart';
+import '../models/onboarding.dart';
 import '../models/pulse.dart';
 
 const String _defaultGatewayBaseUrl = String.fromEnvironment(
@@ -167,6 +168,20 @@ class ApiClient {
     );
   }
 
+  Future<OnboardingSummary> fetchOnboardingSummary() async {
+    final response = await _client.get(
+      Uri.parse('$_baseUrl/onboarding/summary'),
+      headers: _headers(),
+    );
+    if (response.statusCode != 200) {
+      throw Exception(_errorMessage(response, 'Failed to load setup wizard state'));
+    }
+
+    return OnboardingSummary.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+  }
+
   Future<HouseholdAnalyticsSnapshot> fetchHouseholdAnalytics({
     int days = 14,
   }) async {
@@ -242,6 +257,52 @@ class ApiClient {
     );
     if (response.statusCode != 200) {
       throw Exception(_errorMessage(response, 'Failed to add category rule'));
+    }
+
+    return Device.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+  }
+
+  Future<Device> removeCategoryPolicy(int deviceId, String categoryKey) async {
+    final response = await _client.delete(
+      Uri.parse('$_baseUrl/devices/$deviceId/category-policies/$categoryKey'),
+      headers: _headers(),
+    );
+    if (response.statusCode != 200) {
+      throw Exception(_errorMessage(response, 'Failed to remove category rule'));
+    }
+
+    return Device.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+  }
+
+  Future<Device> updateAllowlist({
+    required int deviceId,
+    required List<String> domains,
+    String? name,
+    String? modeKey,
+  }) async {
+    final response = await _client.put(
+      Uri.parse('$_baseUrl/devices/$deviceId/allowlist'),
+      headers: _jsonHeaders(),
+      body: jsonEncode({
+        'domains': domains,
+        if (name != null && name.trim().isNotEmpty) 'name': name.trim(),
+        if (modeKey != null && modeKey.trim().isNotEmpty) 'mode_key': modeKey.trim(),
+      }),
+    );
+    if (response.statusCode != 200) {
+      throw Exception(_errorMessage(response, 'Failed to update allowlist'));
+    }
+
+    return Device.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+  }
+
+  Future<Device> clearAllowlist(int deviceId) async {
+    final response = await _client.delete(
+      Uri.parse('$_baseUrl/devices/$deviceId/allowlist'),
+      headers: _headers(),
+    );
+    if (response.statusCode != 200) {
+      throw Exception(_errorMessage(response, 'Failed to clear allowlist'));
     }
 
     return Device.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
@@ -547,6 +608,28 @@ class ApiClient {
     }
 
     return Profile.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+  }
+
+  Future<Device> updateDevice({
+    required int deviceId,
+    String? displayName,
+    int? profileId,
+    int? dailyLimitMinutes,
+  }) async {
+    final response = await _client.patch(
+      Uri.parse('$_baseUrl/devices/$deviceId'),
+      headers: _jsonHeaders(),
+      body: jsonEncode({
+        if (displayName != null) 'display_name': displayName,
+        if (profileId != null) 'profile_id': profileId,
+        if (dailyLimitMinutes != null) 'daily_limit_minutes': dailyLimitMinutes,
+      }),
+    );
+    if (response.statusCode != 200) {
+      throw Exception(_errorMessage(response, 'Failed to update device'));
+    }
+
+    return Device.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
   }
 
   Future<Device> updateDeviceProfile({

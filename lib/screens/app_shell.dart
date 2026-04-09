@@ -19,6 +19,7 @@ class WiFenceAppShell extends StatefulWidget {
     required this.currentUser,
     required this.currentTrustedDevice,
     required this.currentDeviceId,
+    required this.onOpenSetupWizard,
     required this.onLogout,
   });
 
@@ -26,6 +27,7 @@ class WiFenceAppShell extends StatefulWidget {
   final AuthUser currentUser;
   final TrustedDevice? currentTrustedDevice;
   final String currentDeviceId;
+  final Future<void> Function()? onOpenSetupWizard;
   final Future<void> Function() onLogout;
 
   @override
@@ -89,6 +91,7 @@ class _WiFenceAppShellState extends State<WiFenceAppShell> {
           ),
         );
       },
+      onOpenSetupWizard: widget.onOpenSetupWizard,
     ),
   ];
 
@@ -263,6 +266,7 @@ class _AccountStageScreen extends StatelessWidget {
     required this.onOpenChangelog,
     required this.onOpenAuditLog,
     required this.onOpenAnalytics,
+    required this.onOpenSetupWizard,
   });
 
   final AuthUser currentUser;
@@ -273,6 +277,7 @@ class _AccountStageScreen extends StatelessWidget {
   final VoidCallback onOpenChangelog;
   final VoidCallback onOpenAuditLog;
   final VoidCallback onOpenAnalytics;
+  final Future<void> Function()? onOpenSetupWizard;
 
   @override
   Widget build(BuildContext context) {
@@ -303,6 +308,23 @@ class _AccountStageScreen extends StatelessWidget {
                   ),
                   child: const Icon(
                     Icons.query_stats_rounded,
+                    color: WiFenceColors.deepSea,
+                  ),
+                ),
+              ),
+            if (onOpenSetupWizard != null)
+              IconButton(
+                onPressed: () => onOpenSetupWizard!(),
+                icon: Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: WiFenceColors.card,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: WiFenceColors.line),
+                  ),
+                  child: const Icon(
+                    Icons.auto_fix_high_rounded,
                     color: WiFenceColors.deepSea,
                   ),
                 ),

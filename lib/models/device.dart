@@ -26,6 +26,7 @@ class Policy {
     required this.enabled,
     this.dailyMinutes,
     this.categoryKey,
+    this.domainList = const [],
     this.scheduleDays = const [],
     this.startsAtMinute,
     this.endsAtMinute,
@@ -38,6 +39,7 @@ class Policy {
   final bool enabled;
   final int? dailyMinutes;
   final String? categoryKey;
+  final List<String> domainList;
   final List<int> scheduleDays;
   final int? startsAtMinute;
   final int? endsAtMinute;
@@ -51,6 +53,9 @@ class Policy {
       enabled: json['enabled'] as bool,
       dailyMinutes: json['daily_minutes'] as int?,
       categoryKey: json['category_key'] as String?,
+      domainList: (json['domain_list'] as List<dynamic>? ?? [])
+          .map((item) => item as String)
+          .toList(),
       scheduleDays: (json['schedule_days'] as List<dynamic>? ?? [])
           .map((item) => item as int)
           .toList(),
@@ -68,6 +73,9 @@ class Device {
     required this.isOnline,
     required this.isPaused,
     required this.minutesUsedToday,
+    required this.bytesInToday,
+    required this.bytesOutToday,
+    required this.blockedDnsEventsToday,
     required this.identityConfidence,
     required this.status,
     this.hostname,
@@ -87,6 +95,9 @@ class Device {
   final bool isPaused;
   final int? dailyLimitMinutes;
   final int minutesUsedToday;
+  final int bytesInToday;
+  final int bytesOutToday;
+  final int blockedDnsEventsToday;
   final int identityConfidence;
   final String status;
   final Profile? profile;
@@ -103,6 +114,9 @@ class Device {
       isPaused: json['is_paused'] as bool,
       dailyLimitMinutes: json['daily_limit_minutes'] as int?,
       minutesUsedToday: json['minutes_used_today'] as int,
+      bytesInToday: json['bytes_in_today'] as int? ?? 0,
+      bytesOutToday: json['bytes_out_today'] as int? ?? 0,
+      blockedDnsEventsToday: json['blocked_dns_events_today'] as int? ?? 0,
       identityConfidence: json['identity_confidence'] as int,
       status: json['status'] as String,
       profile: json['profile'] == null

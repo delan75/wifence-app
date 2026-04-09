@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class SessionStore {
   static const _tokenKey = 'wifence_access_token';
   static const _deviceIdKey = 'wifence_device_id';
+  static const _wizardCompletedPrefix = 'wifence_setup_wizard_completed_';
 
   Future<String?> readToken() async {
     final prefs = await SharedPreferences.getInstance();
@@ -19,6 +20,16 @@ class SessionStore {
   Future<void> clear() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_tokenKey);
+  }
+
+  Future<bool> isSetupWizardCompleted(String trustedDeviceId) async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('$_wizardCompletedPrefix$trustedDeviceId') ?? false;
+  }
+
+  Future<void> markSetupWizardCompleted(String trustedDeviceId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('$_wizardCompletedPrefix$trustedDeviceId', true);
   }
 
   Future<String> getOrCreateDeviceId() async {

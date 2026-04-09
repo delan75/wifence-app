@@ -4,6 +4,7 @@ import 'models/auth.dart';
 import 'models/gateway.dart';
 import 'screens/app_shell.dart';
 import 'screens/auth_screen.dart';
+import 'screens/setup_wizard_screen.dart';
 import 'services/api_client.dart';
 import 'services/session_store.dart';
 import 'theme/wifence_theme.dart';
@@ -50,11 +51,17 @@ class _WiFenceAppState extends State<WiFenceApp> {
       if (token != null && setupStatus.isConfigured) {
         try {
           final authContext = await _apiClient.fetchMe();
+          final shouldShowSetupWizard =
+              authContext.trustedDevice.role == 'owner' &&
+              !(await _sessionStore.isSetupWizardCompleted(
+                authContext.trustedDevice.id,
+              ));
           return _BootstrapState(
             readiness: readiness,
             setupStatus: setupStatus,
             currentUser: authContext.user,
             currentTrustedDevice: authContext.trustedDevice,
+            shouldShowSetupWizard: shouldShowSetupWizard,
           );
         } catch (_) {
           await _sessionStore.clear();
@@ -74,6 +81,9 @@ class _WiFenceAppState extends State<WiFenceApp> {
   Future<void> _handleAuthenticated(AuthSession session) async {
     await _sessionStore.saveToken(session.accessToken);
     _apiClient.setAccessToken(session.accessToken);
+    final shouldShowSetupWizard =
+        session.trustedDevice.role == 'owner' &&
+        !(await _sessionStore.isSetupWizardCompleted(session.trustedDevice.id));
 
     setState(() {
       _bootstrapFuture = Future.value(
@@ -84,6 +94,28 @@ class _WiFenceAppState extends State<WiFenceApp> {
           ),
           currentUser: session.user,
           currentTrustedDevice: session.trustedDevice,
+          shouldShowSetupWizard: shouldShowSetupWizard,
+        ),
+      );
+    });
+  }
+
+  Future<void> _handleSetupWizardClosed(_BootstrapState state, bool completed) async {
+    final trustedDevice = state.currentTrustedDevice;
+    final currentUser = state.currentUser;
+    if (trustedDevice == null || currentUser == null) {
+      return;
+    }
+
+    await _sessionStore.markSetupWizardCompleted(trustedDevice.id);
+    setState(() {
+      _bootstrapFuture = Future.value(
+        _BootstrapState(
+          readiness: state.readiness,
+          setupStatus: state.setupStatus,
+          currentUser: currentUser,
+          currentTrustedDevice: trustedDevice,
+          shouldShowSetupWizard: false,
         ),
       );
     });
@@ -119,11 +151,34 @@ class _WiFenceAppState extends State<WiFenceApp> {
 
           final state = snapshot.data ?? const _BootstrapState();
           if (state.currentUser != null && state.setupStatus?.isConfigured == true) {
+            if (state.shouldShowSetupWizard && state.currentTrustedDevice != null) {
+              return SetupWizardScreen(
+                apiClient: _apiClient,
+                onClosed: (completed) => _handleSetupWizardClosed(state, completed),
+              );
+            }
             return WiFenceAppShell(
               apiClient: _apiClient,
               currentUser: state.currentUser!,
               currentTrustedDevice: state.currentTrustedDevice,
               currentDeviceId: _deviceId ?? '',
+              onOpenSetupWizard: state.currentTrustedDevice != null &&
+                      state.currentTrustedDevice!.role != 'viewer'
+                  ? () async {
+                      await Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => SetupWizardScreen(
+                            apiClient: _apiClient,
+                            allowLater: false,
+                            showBackButton: true,
+                            onClosed: (_) async {
+                              Navigator.of(context).pop();
+                            },
+                          ),
+                        ),
+                      );
+                    }
+                  : null,
               onLogout: _handleLogout,
             );
           }
@@ -150,6 +205,7 @@ class _BootstrapState {
     this.setupStatus,
     this.currentUser,
     this.currentTrustedDevice,
+    this.shouldShowSetupWizard = false,
     this.errorMessage,
   });
 
@@ -157,5 +213,6 @@ class _BootstrapState {
   final SetupStatus? setupStatus;
   final AuthUser? currentUser;
   final TrustedDevice? currentTrustedDevice;
+  final bool shouldShowSetupWizard;
   final String? errorMessage;
 }

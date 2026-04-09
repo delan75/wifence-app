@@ -259,6 +259,34 @@ class _AnalyticsLoadedState extends StatelessWidget {
                   ),
                 ],
               ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _HeroMetric(
+                      label: 'Blocked domains',
+                      value: '${today.blockedDnsEventCount}',
+                      accent: WiFenceColors.coral,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _HeroMetric(
+                      label: 'Download',
+                      value: _formatBytes(today.bytesIn),
+                      accent: WiFenceColors.cobalt,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _HeroMetric(
+                      label: 'Upload',
+                      value: _formatBytes(today.bytesOut),
+                      accent: WiFenceColors.deepSea,
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
@@ -587,6 +615,15 @@ class _WeekdayTrendCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
                 _LinearSignalBar(
+                  label: _formatBytes(trend.bytesIn + trend.bytesOut),
+                  ratio: math.min<double>(
+                    1,
+                    (trend.bytesIn + trend.bytesOut) / (1024 * 1024 * 1024),
+                  ),
+                  color: WiFenceColors.mint,
+                ),
+                const SizedBox(height: 10),
+                _LinearSignalBar(
                   label: '$totalPressure routine events',
                   ratio: pressureRatio,
                   color: WiFenceColors.coral,
@@ -603,6 +640,7 @@ class _WeekdayTrendCard extends StatelessWidget {
                 _MiniStat(label: 'Sched', value: '${trend.scheduleHitCount}'),
                 _MiniStat(label: 'Pause', value: '${trend.manualPauseCount}'),
                 _MiniStat(label: 'Quota', value: '${trend.quotaHitCount}'),
+                _MiniStat(label: 'Block', value: '${trend.blockedDnsEventCount}'),
               ],
             ),
           ),
@@ -676,15 +714,40 @@ class _ProfileTrendCard extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: _InfoPill(
-                  label: 'Schedule hits',
-                  value: '${profile.scheduleHitCount}',
+                  label: 'Traffic',
+                  value: _formatBytes(profile.bytesIn + profile.bytesOut),
                 ),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: _InfoPill(
+                  label: 'Blocked',
+                  value: '${profile.blockedDnsEventCount}',
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _InfoPill(
+                  label: 'Schedule hits',
+                  value: '${profile.scheduleHitCount}',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: _InfoPill(
                   label: 'Pause actions',
                   value: '${profile.manualPauseCount}',
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _InfoPill(
+                  label: 'Quota hits',
+                  value: '${profile.quotaHitCount}',
                 ),
               ),
             ],
@@ -765,6 +828,8 @@ class _DeviceTrendCard extends StatelessWidget {
                 _InfoPill(label: 'Sched', value: '${device.scheduleHitCount}'),
                 _InfoPill(label: 'Pause', value: '${device.manualPauseCount}'),
                 _InfoPill(label: 'Quota', value: '${device.quotaHitCount}'),
+                _InfoPill(label: 'Blocked', value: '${device.blockedDnsEventCount}'),
+                _InfoPill(label: 'Traffic', value: _formatBytes(device.bytesIn + device.bytesOut)),
                 if (device.dailyLimitMinutes != null)
                   _InfoPill(label: 'Limit', value: '${device.dailyLimitMinutes} min'),
               ],
@@ -1146,6 +1211,19 @@ String _formatMinutes(int minutes) {
   if (hours <= 0) return '${remainder}m';
   if (remainder == 0) return '${hours}h';
   return '${hours}h ${remainder}m';
+}
+
+String _formatBytes(int value) {
+  if (value >= 1024 * 1024 * 1024) {
+    return '${(value / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
+  }
+  if (value >= 1024 * 1024) {
+    return '${(value / (1024 * 1024)).toStringAsFixed(1)} MB';
+  }
+  if (value >= 1024) {
+    return '${(value / 1024).toStringAsFixed(1)} KB';
+  }
+  return '$value B';
 }
 
 Color _statusColor(String? status) {
